@@ -1,20 +1,8 @@
 {
-  "version": 2,
-  "builds": [
-    { "src": "api/**/*.js", "use": "@vercel/node" },
-    { "src": "user/**/*.html", "use": "static" },
-    { "src": "admin/**/*.html", "use": "static" },
-    { "src": "shared/**/*", "use": "static" }
-  ],
-  "routes": [
-    { "src": "/api/fingerprint", "dest": "/api/fingerprint/route.js" },
-    { "src": "/api/baiye", "dest": "/api/baiye/route.js" },
-    { "src": "/api/time-slots", "dest": "/api/time-slots/route.js" },
-    { "src": "/api/members", "dest": "/api/members/route.js" },
-    { "src": "/api/bookings", "dest": "/api/bookings/route.js" },
-    { "src": "/api/init-db", "dest": "/api/init-db/route.js" },
-    { "src": "/user", "dest": "/user/index.html" },
-    { "src": "/admin", "dest": "/admin/index.html" },
-    { "src": "/(.*)", "dest": "/user/index.html" }
+  "rewrites": [
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/user", "destination": "/user/index.html" },
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/(.*)", "destination": "/user/index.html" }
   ]
 }
