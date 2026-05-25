@@ -71,6 +71,13 @@ export default async function handler(req, res) {
       )
     `;
 
+    // Add character_school column if it doesn't exist (for existing tables)
+    try {
+      await sql`ALTER TABLE bookings ADD COLUMN IF NOT EXISTS character_school VARCHAR(50)`;
+    } catch (e) {
+      // Ignore if column already exists
+    }
+
     return res.status(200).json({ success: true, data: { message: 'All tables created successfully' } });
   } catch (error) {
     return res.status(500).json({ success: false, error: error.message });
