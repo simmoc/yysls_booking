@@ -1,0 +1,112 @@
+/* 管理布局 */
+.admin-layout {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 24px;
+}
+
+/* 用户信息栏 */
+.user-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 24px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    margin-bottom: 24px;
+    color: #fff;
+    backdrop-filter: blur(10px);
+}
+
+.user-info-bar .user-id {
+    font-family: monospace;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.user-info-bar .user-role {
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.user-role.admin {
+    background: var(--accent-color);
+    color: #1a1f2e;
+}
+
+.user-role.user {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
+/* 管理列表 */
+.admin-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+/* 数据库管理卡片 */
+.db-status {
+    padding: 12px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    margin-top: 12px;
+}
+
+.db-status.ready {
+    background: #d4edda;
+    color: #155724;
+}
+
+.db-status.error {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.db-status.pending {
+    background: #fff3cd;
+    color: #856404;
+}
+
+/* 确认对话框 */
+.confirm-modal .modal-content {
+    max-width: 400px;
+    text-align: center;
+}
+
+.confirm-message {
+    padding: 20px 0;
+    font-size: 1.1rem;
+    color: var(--text-primary);
+}
+
+.confirm-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+}
+
+/* 管理员提示 */
+.admin-notice {
+    background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+    border-left: 4px solid var(--accent-color);
+    padding: 16px;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    color: #856404;
+    font-size: 0.9rem;
+}
+
+/* 成员筛选 */
+.member-filter {
+    margin-bottom: 12px;
+}
+
+/* 响应式 */
+@media (max-width: 900px) {
+    .admin-layout {
+        grid-template-columns: 1fr;
+    }
+}

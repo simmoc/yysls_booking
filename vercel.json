@@ -1,16 +1,7 @@
 {
-  "version": 2,
-  "name": "yanyun-booking-system",
-  "builds": [
-    {
-      "src": "index.html",
-      "use": "@vercel/static"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/(.*)",
-      "dest": "/index.html"
-    }
+  "rewrites": [
+    { "source": "/user", "destination": "/user/index.html" },
+    { "source": "/admin", "destination": "/admin/index.html" },
+    { "source": "/", "destination": "/user/index.html" }
   ]
 }

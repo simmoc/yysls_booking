@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>燕云百业侠境预约</title>
+    <link rel="stylesheet" href="../shared/styles.css">
+</head>
+<body>
+    <!-- 加载动画 -->
+    <div id="loading-overlay" class="loading-overlay hidden">
+        <div class="loading-spinner"></div>
+    </div>
+
+    <div class="container">
+        <!-- 页面头部 -->
+        <header class="page-header">
+            <h1>燕云百业侠境预约系统</h1>
+            <p class="subtitle">百业侠境 · 一键预约</p>
+        </header>
+
+        <!-- 分享横幅（默认隐藏） -->
+        <div id="share-banner" class="share-banner hidden">
+            <div class="share-banner-info">
+                <span class="share-banner-icon">&#128279;</span>
+                <div class="share-banner-text">
+                    <span id="share-banner-title" class="share-banner-title">来自好友的分享</span>
+                    <span id="share-banner-desc" class="share-banner-desc">点击下方快速预约</span>
+                </div>
+            </div>
+            <button class="share-banner-close" onclick="closeShareBanner()">&times;</button>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="user-layout">
+            <!-- 左侧边栏 -->
+            <div class="sidebar">
+                <!-- 我的角色 -->
+                <div class="card">
+                    <h2>&#127917; 我的角色</h2>
+                    <div id="character-list" class="character-list">
+                        <p class="empty-tip">暂无角色，请创建</p>
+                    </div>
+                    <button class="btn btn-primary" id="btn-create-character" style="margin-top: 12px;">+ 创建角色</button>
+                </div>
+
+                <!-- 预约统计 -->
+                <div class="card">
+                    <h2>&#128202; 预约统计</h2>
+                    <div id="stats-content" class="stats-bar">
+                        <div class="stat-item">
+                            <span class="stat-label">我的预约</span>
+                            <span id="stat-my-bookings" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">总预约人数</span>
+                            <span id="stat-total-bookings" class="stat-value">0</span>
+                        </div>
+                        <div class="stat-item">
+                            <span class="stat-label">百业数量</span>
+                            <span id="stat-baiye-count" class="stat-value">0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 右侧主内容 -->
+            <div class="main-content">
+                <!-- 无角色提示（无角色时显示） -->
+                <div id="no-character-tip" class="card tip-card">
+                    <p>请先创建或选择一个角色，即可开始预约</p>
+                </div>
+
+                <!-- 预约表单（有角色时显示） -->
+                <div id="booking-form" class="card" style="display: none;">
+                    <h2>&#128197; 新建预约</h2>
+                    <div class="form-group">
+                        <label>当前角色</label>
+                        <div id="current-character" class="current-character"></div>
+                    </div>
+                    <div class="form-group">
+                        <label>选择百业 <span class="required">*</span></label>
+                        <select id="baiye-select" class="form-control">
+                            <option value="">请选择百业</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>选择时间 <span class="required">*</span></label>
+                        <select id="time-select" class="form-control">
+                            <option value="">请选择时间</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>备注</label>
+                        <input type="text" id="remark-input" class="form-control" placeholder="可选：添加备注信息">
+                    </div>
+                    <button class="btn btn-primary" id="btn-submit-booking">确认预约</button>
+                    <button class="btn" id="btn-share-booking" style="margin-top: 10px; width: 100%;">分享此预约</button>
+                </div>
+
+                <!-- 预约列表 -->
+                <div class="card">
+                    <h2>&#128203; 预约列表</h2>
+                    <div class="filter-bar">
+                        <select id="filter-baiye" class="form-control">
+                            <option value="">全部百业</option>
+                        </select>
+                        <select id="filter-time" class="form-control">
+                            <option value="">全部时间</option>
+                        </select>
+                    </div>
+                    <div id="booking-list" class="booking-list">
+                        <p class="empty-tip">暂无预约</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 角色创建/编辑模态框 -->
+    <div id="character-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="character-modal-title">创建角色</h3>
+                <button class="close-btn" id="btn-close-character-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="character-id">
+                <div class="form-group">
+                    <label>角色名称 <span class="required">*</span></label>
+                    <input type="text" id="character-name" class="form-control" placeholder="输入角色名称">
+                </div>
+                <div class="form-group">
+                    <label>木桩秒伤（万）</label>
+                    <input type="number" id="character-dps" class="form-control" placeholder="输入秒伤数值">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn" id="btn-cancel-character">取消</button>
+                <button class="btn btn-primary" id="btn-save-character">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 分享模态框 -->
+    <div id="share-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>分享预约链接</h3>
+                <button class="close-btn" id="btn-close-share-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>复制以下链接分享给成员：</p>
+                <div class="share-link-box">
+                    <input type="text" id="share-link" class="form-control" readonly>
+                    <button class="btn btn-primary" id="btn-copy-share-link">复制</button>
+                </div>
+                <p class="tip">成员打开链接后可直接参与预约</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+</body>
+</html>

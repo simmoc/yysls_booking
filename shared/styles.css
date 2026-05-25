@@ -1,4 +1,4 @@
-/* 燕云百业侠境预约系统 - 样式表 */
+/* 燕云百业侠境预约系统 - 共享样式表 */
 
 :root {
     --primary-color: #4a6fa5;
@@ -48,48 +48,29 @@ body {
 .header h1 {
     color: #fff;
     font-size: 2rem;
-    margin-bottom: 20px;
+    margin-bottom: 8px;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.nav-tabs {
-    display: inline-flex;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 50px;
-    padding: 4px;
-    backdrop-filter: blur(10px);
+/* 页面头部 - 包含标题和副标题 */
+.page-header {
+    text-align: center;
+    margin-bottom: 30px;
+    padding: 20px 0;
 }
 
-.tab-btn {
-    padding: 12px 30px;
-    border: none;
-    background: transparent;
-    color: rgba(255, 255, 255, 0.7);
-    font-size: 1rem;
-    cursor: pointer;
-    border-radius: 50px;
-    transition: all 0.3s ease;
-    font-weight: 500;
-}
-
-.tab-btn:hover {
+.page-header h1 {
     color: #fff;
+    font-size: 2rem;
+    margin-bottom: 8px;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
 }
 
-.tab-btn.active {
-    background: var(--accent-color);
-    color: #1a1f2e;
-    box-shadow: 0 2px 8px rgba(232, 184, 109, 0.4);
-}
-
-/* 面板样式 */
-.panel {
-    display: none;
-}
-
-.panel.active {
-    display: block;
-    animation: fadeIn 0.3s ease;
+.page-header .subtitle {
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 1.1rem;
+    font-weight: 400;
+    letter-spacing: 2px;
 }
 
 @keyframes fadeIn {
@@ -152,13 +133,6 @@ body {
 
 .main-content {
     min-width: 0;
-}
-
-/* 管理布局 */
-.admin-layout {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 24px;
 }
 
 /* 角色列表 */
@@ -443,48 +417,6 @@ select.form-control {
     padding-left: 12px;
 }
 
-/* 管理列表 */
-.admin-list {
-    max-height: 300px;
-    overflow-y: auto;
-}
-
-.admin-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 14px 16px;
-    margin-bottom: 10px;
-    background: var(--bg-color);
-    border-radius: var(--radius-sm);
-    transition: all 0.2s ease;
-}
-
-.admin-item:hover {
-    background: #e8f0f8;
-}
-
-.item-info {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-}
-
-.item-name {
-    font-weight: 600;
-    color: var(--text-primary);
-}
-
-.item-desc {
-    font-size: 0.85rem;
-    color: var(--text-secondary);
-}
-
-.item-actions {
-    display: flex;
-    gap: 6px;
-}
-
 /* 空状态 */
 .empty-tip {
     text-align: center;
@@ -630,6 +562,135 @@ select.form-control {
     background: var(--danger-color);
 }
 
+/* 加载动画 */
+.loading-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(26, 31, 46, 0.8);
+    z-index: 3000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(4px);
+}
+
+.loading-overlay.hidden {
+    display: none;
+}
+
+.loading-spinner {
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(255, 255, 255, 0.2);
+    border-top-color: var(--accent-color);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* 分享横幅 */
+.share-banner {
+    background: linear-gradient(135deg, #e8b86d, #f0d08c);
+    color: #1a1f2e;
+    padding: 16px 24px;
+    margin-bottom: 20px;
+    border-radius: var(--radius);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: 0 4px 16px rgba(232, 184, 109, 0.3);
+    animation: fadeIn 0.3s ease;
+}
+
+.share-banner.hidden {
+    display: none;
+}
+
+.share-banner-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex: 1;
+}
+
+.share-banner-icon {
+    font-size: 1.5rem;
+}
+
+.share-banner-text {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.share-banner-title {
+    font-weight: 600;
+    font-size: 1rem;
+}
+
+.share-banner-desc {
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
+
+.share-banner-close {
+    background: rgba(0, 0, 0, 0.1);
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 1.2rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    color: #1a1f2e;
+    flex-shrink: 0;
+    margin-left: 12px;
+}
+
+.share-banner-close:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* 统计栏 */
+.stats-bar {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.stat-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 14px;
+    background: var(--bg-color);
+    border-radius: var(--radius-sm);
+}
+
+.stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.stat-value {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--primary-color);
+}
+
+.stat-value.highlight {
+    color: var(--accent-color);
+}
+
 /* 滚动条样式 */
 ::-webkit-scrollbar {
     width: 6px;
@@ -654,13 +715,9 @@ select.form-control {
     .user-layout {
         grid-template-columns: 1fr;
     }
-    
+
     .sidebar {
         position: static;
-    }
-    
-    .admin-layout {
-        grid-template-columns: 1fr;
     }
 }
 
@@ -668,30 +725,36 @@ select.form-control {
     .container {
         padding: 12px;
     }
-    
+
+    .page-header h1,
     .header h1 {
         font-size: 1.5rem;
     }
-    
-    .tab-btn {
-        padding: 10px 20px;
-        font-size: 0.9rem;
-    }
-    
+
     .card {
         padding: 16px;
     }
-    
+
     .filter-bar {
         flex-direction: column;
     }
-    
+
     .booking-detail {
         flex-direction: column;
         gap: 6px;
     }
-    
+
     .modal-content {
         margin: 10px;
+    }
+
+    .share-banner {
+        flex-direction: column;
+        text-align: center;
+        gap: 12px;
+    }
+
+    .share-banner-info {
+        flex-direction: column;
     }
 }

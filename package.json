@@ -1,0 +1,13 @@
+{
+  "name": "yanyun-booking-system",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "vercel dev"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.0.0",
+    "@vercel/node": "^5.0.0",
+    "cors": "^2.8.5"
+  }
+}
