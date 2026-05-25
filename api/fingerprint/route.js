@@ -1,7 +1,5 @@
 import { pool, sql } from '../_lib/db.js';
 
-export const config = { runtime: 'edge' };
-
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
