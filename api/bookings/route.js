@@ -85,7 +85,7 @@ export default async function handler(req, res) {
     }
 
     if (req.method === 'POST') {
-      const { characterName, characterRole, characterDps, baiyeId, timeSlotId, remark, userId } = req.body;
+      const { characterName, characterRole, characterSchool, characterDps, baiyeId, timeSlotId, remark, userId } = req.body;
 
       if (!userId || !baiyeId || !timeSlotId) {
         return res.status(400).json({ success: false, error: 'userId, baiyeId, and timeSlotId are required' });
@@ -124,8 +124,8 @@ export default async function handler(req, res) {
       }
 
       const result = await sql`
-        INSERT INTO bookings (user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark)
-        VALUES (${parseInt(userId)}, ${characterName || null}, ${characterRole || null}, ${characterDps || null},
+        INSERT INTO bookings (user_id, character_name, character_role, character_school, character_dps, baiye_id, time_slot_id, remark)
+        VALUES (${parseInt(userId)}, ${characterName || null}, ${characterRole || null}, ${characterSchool || null}, ${characterDps || null},
                 ${parseInt(baiyeId)}, ${parseInt(timeSlotId)}, ${remark || null})
         RETURNING id, user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark, created_at
       `;

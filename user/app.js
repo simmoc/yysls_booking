@@ -173,7 +173,8 @@ function toggleDpsField(role) {
 function saveCharacter() {
     const idInput = document.getElementById('character-id');
     const nameInput = document.getElementById('character-name');
-    const roleSelect = document.getElementById('character-role');
+    const schoolSelect = document.getElementById('character-school');
+    const roleInput = document.getElementById('character-role');
     const dpsInput = document.getElementById('character-dps');
 
     const name = nameInput.value.trim();
@@ -183,13 +184,14 @@ function saveCharacter() {
         return;
     }
 
-    const role = roleSelect.value;
-    if (!role) {
-        showToast('请选择职业类型', 'error');
-        roleSelect.focus();
+    const school = schoolSelect.value;
+    if (!school) {
+        showToast('请选择流派', 'error');
+        schoolSelect.focus();
         return;
     }
 
+    const role = roleInput.value;
     const dps = role === '奶妈' ? '' : dpsInput.value.trim();
     const chars = getAllCharacters();
     const editId = idInput.value;
@@ -199,6 +201,7 @@ function saveCharacter() {
         const index = chars.findIndex(c => c.id === editId);
         if (index !== -1) {
             chars[index].name = name;
+            chars[index].school = school;
             chars[index].role = role;
             chars[index].dps = dps;
             // 如果编辑的是当前角色，同步更新
@@ -212,6 +215,7 @@ function saveCharacter() {
         const newChar = {
             id: generateId(),
             name,
+            school,
             role,
             dps
         };
@@ -394,6 +398,7 @@ async function submitBooking() {
     timeSlotId: parseInt(timeSlotId),
     characterName: currentCharacter.name,
     characterRole: currentCharacter.role || null,
+    characterSchool: currentCharacter.school || null,
     characterDps: currentCharacter.dps ? parseFloat(currentCharacter.dps) : null,
     remark
 });
@@ -623,11 +628,13 @@ function updateBookingFormVisibility() {
 
         // 更新当前角色显示
         const charEl = document.getElementById('current-character');
-        const dpsText = currentCharacter.dps ? ` · ${escapeHtml(currentCharacter.dps)} 万秒伤` : '';
+        const schoolText = currentCharacter.school ? ` · ${escapeHtml(currentCharacter.school)}` : '';
+        const roleTag = currentCharacter.role ? `<span class="role-tag role-${escapeHtml(currentCharacter.role)}">${escapeHtml(getRoleLabel(currentCharacter.role))}</span>` : '';
         charEl.innerHTML = `
             <div class="character-tag">
                 <span class="booking-char">${escapeHtml(currentCharacter.name)}</span>
-                <span class="booking-dps">${escapeHtml(currentCharacter.dps || '未填写')}</span>
+                ${roleTag}
+                <span class="booking-dps">${escapeHtml(currentCharacter.school || '')}</span>
             </div>
         `;
     } else {
@@ -725,12 +732,14 @@ function renderBookingList(bookings) {
             const id = booking.id || booking._id;
             const charName = booking.character_name || booking.characterName || booking.name || '未知角色';
             const charRole = booking.character_role || booking.characterRole || '';
+            const charSchool = booking.character_school || booking.characterSchool || '';
             const charDps = booking.character_dps || booking.characterDps || booking.dps || '';
             const remark = booking.remark || '';
             const isOwner = currentUser && (booking.user_id === currentUser.id || booking.userId === currentUser.id);
             const roleTag = charRole
                 ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>`
                 : '';
+            const schoolTag = charSchool ? `<span class="school-tag">${escapeHtml(charSchool)}</span>` : '';
 
             html += `
                 <div class="booking-item" style="padding: 10px 12px; margin-bottom: 6px; background: var(--bg-color); border-radius: 6px;">
@@ -738,6 +747,7 @@ function renderBookingList(bookings) {
                         <div class="booking-header">
                             <span class="booking-char">${escapeHtml(charName)}</span>
                             ${roleTag}
+                            ${schoolTag}
                             ${charDps ? `<span class="booking-dps">⚔️ ${escapeHtml(charDps)}万</span>` : ''}
                         </div>
                         ${remark ? `<div class="booking-remark" style="margin-top: 4px;">📝 ${escapeHtml(remark)}</div>` : ''}
@@ -986,9 +996,12 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal('members-modal');
     });
 
-    // 职业选择变化 - 控制秒伤字段显示
-    document.getElementById('character-role').addEventListener('change', (e) => {
-        toggleDpsField(e.target.value);
+    // 流派选择变化 - 自动设置职业类型并控制秒伤字段显示
+    document.getElementById('character-school').addEventListener('change', (e) => {
+        const selected = e.target.options[e.target.selectedIndex];
+        const role = selected.dataset.role || '';
+        document.getElementById('character-role').value = role;
+        toggleDpsField(role);
     });
 
     // 百业和时间选择变化 - 更新人数统计

@@ -159,13 +159,35 @@
                     <input type="text" id="character-name" class="form-control" placeholder="输入角色名称">
                 </div>
                 <div class="form-group">
-                    <label>职业类型 <span class="required">*</span></label>
-                    <select id="character-role" class="form-control">
-                        <option value="">请选择职业</option>
-                        <option value="输出">输出</option>
-                        <option value="承伤">承伤</option>
-                        <option value="奶妈">奶妈</option>
+                    <label>流派 <span class="required">*</span></label>
+                    <select id="character-school" class="form-control">
+                        <option value="">请选择流派</option>
+                        <optgroup label="输出">
+                            <option value="积矩九剑" data-role="输出">积矩九剑</option>
+                            <option value="嗟夫刀法" data-role="输出">嗟夫刀法</option>
+                            <option value="泥犁三垢" data-role="输出">泥犁三垢</option>
+                            <option value="青山执笔" data-role="输出">青山执笔</option>
+                            <option value="明川药典" data-role="输出">明川药典</option>
+                            <option value="千香引魂蛊" data-role="输出">千香引魂蛊</option>
+                            <option value="九重春色" data-role="输出">九重春色</option>
+                            <option value="无名剑法" data-role="输出">无名剑法</option>
+                            <option value="无名枪法" data-role="输出">无名枪法</option>
+                            <option value="栗子游尘" data-role="输出">栗子游尘</option>
+                            <option value="牵丝玉" data-role="输出">牵丝玉</option>
+                        </optgroup>
+                        <optgroup label="承伤">
+                            <option value="八方风雷枪" data-role="承伤">八方风雷枪</option>
+                            <option value="陌刀" data-role="承伤">陌刀</option>
+                        </optgroup>
+                        <optgroup label="奶妈">
+                            <option value="明川药典·奶" data-role="奶妈">明川药典·奶</option>
+                            <option value="千香引魂蛊·奶" data-role="奶妈">千香引魂蛊·奶</option>
+                        </optgroup>
                     </select>
+                </div>
+                <div class="form-group">
+                    <label>职业类型</label>
+                    <input type="text" id="character-role" class="form-control" readonly placeholder="自动根据流派确定">
                 </div>
                 <div class="form-group" id="dps-group">
                     <label>木桩秒伤（万）</label>

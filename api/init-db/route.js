@@ -62,6 +62,7 @@ export default async function handler(req, res) {
         user_id INTEGER REFERENCES users(id),
         character_name VARCHAR(100),
         character_role VARCHAR(20),
+        character_school VARCHAR(50),
         character_dps DECIMAL(10,2),
         baiye_id INTEGER REFERENCES baiye(id),
         time_slot_id INTEGER REFERENCES time_slots(id),
