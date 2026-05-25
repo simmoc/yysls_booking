@@ -24,6 +24,7 @@ import { escapeHtml, showToast, showLoading, openModal, closeModal } from '/shar
 let currentUser = null;      // 当前用户信息
 let baiyes = [];             // 百业列表缓存
 let timeSlots = [];          // 时间段列表缓存
+let allBookings = [];        // 所有预约缓存
 let isAdmin = false;         // 是否为管理员
 
 // ==================== 初始化 ====================
@@ -196,20 +197,32 @@ async function loadTimeSlots() {
 async function handleCreateTimeSlot() {
     if (!checkAdmin()) return;
 
-    const descInput = document.getElementById('time-desc');
-    const description = descInput.value.trim();
+    const startInput = document.getElementById('time-start');
+    const endInput = document.getElementById('time-end');
+    const noteInput = document.getElementById('time-note');
+    
+    const startTime = startInput.value;
+    const endTime = endInput.value;
+    const note = noteInput.value.trim();
 
-    if (!description) {
-        showToast('请输入时间描述', 'error');
-        descInput.focus();
+    if (!startTime || !endTime) {
+        showToast('请选择开始和结束时间', 'error');
         return;
+    }
+
+    // 格式化描述：开始时间-结束时间 (备注)
+    let description = `${startTime}-${endTime}`;
+    if (note) {
+        description += ` (${note})`;
     }
 
     try {
         await createTimeSlot({ description }, currentUser.id, currentUser.role);
         showToast('时间段创建成功');
         closeModal('time-modal');
-        descInput.value = '';
+        startInput.value = '';
+        endInput.value = '';
+        noteInput.value = '';
         await loadTimeSlots();
     } catch (error) {
         showToast('创建失败: ' + error.message, 'error');
@@ -347,11 +360,16 @@ async function loadBookings() {
         if (filterBaiyeId) filters.baiyeId = filterBaiyeId;
         if (filterTimeId) filters.timeSlotId = filterTimeId;
         const data = await getBookings(filters);
-        const bookings = data.data || data.bookings || data || [];
-        renderBookingList(bookings);
+        allBookings = data.data || data.bookings || data || [];
+        renderBookingList(allBookings);
+        updateStats(allBookings);
+        renderGanttChart(allBookings);
     } catch (error) {
         console.error('加载预约失败:', error);
+        allBookings = [];
         renderBookingList([]);
+        updateStats([]);
+        renderGanttChart([]);
     }
 }
 
@@ -574,6 +592,151 @@ function getRoleLabel(role) {
 }
 
 /**
+ * 更新统计一览
+ * @param {Array} bookings - 预约数组
+ */
+function updateStats(bookings) {
+    // 统计预约数
+    document.getElementById('stat-total-bookings').textContent = bookings.length;
+    
+    // 统计角色数（去重）
+    const uniqueChars = new Set(bookings.map(b => b.character_name || b.characterName).filter(Boolean));
+    document.getElementById('stat-total-characters').textContent = uniqueChars.size;
+    
+    // 百业数
+    document.getElementById('stat-total-baiye').textContent = baiyes.length;
+    
+    // 时间段数
+    document.getElementById('stat-total-slots').textContent = timeSlots.length;
+}
+
+/**
+ * 渲染甘特图
+ * @param {Array} bookings - 预约数组
+ */
+function renderGanttChart(bookings) {
+    const container = document.getElementById('gantt-chart-container');
+    
+    if (!bookings || bookings.length === 0) {
+        container.innerHTML = '<p class="empty-tip">暂无预约数据</p>';
+        return;
+    }
+    
+    // 按百业分组预约
+    const bookingsByBaiye = {};
+    bookings.forEach(b => {
+        const baiyeId = b.baiye_id || b.baiyeId;
+        const baiyeName = b.baiye_name || getBaiyeName(baiyeId);
+        if (!bookingsByBaiye[baiyeName]) {
+            bookingsByBaiye[baiyeName] = [];
+        }
+        bookingsByBaiye[baiyeName].push(b);
+    });
+    
+    // 生成甘特图 HTML
+    let html = '<div class="gantt-chart">';
+    
+    Object.entries(bookingsByBaiye).forEach(([baiyeName, baiyeBookings]) => {
+        html += `
+            <div class="gantt-row">
+                <div class="gantt-label">${escapeHtml(baiyeName)}</div>
+                <div class="gantt-timeline">
+        `;
+        
+        baiyeBookings.forEach((b, index) => {
+            const role = b.character_role || b.characterRole || '';
+            const charName = b.character_name || b.characterName || '未知';
+            const typeClass = role === '奶妈' ? 'type-healer' : (role === '承伤' ? 'type-tank' : 'type-dps');
+            
+            // 计算位置（简单按索引分布）
+            const left = (index * 25) % 100;
+            const width = 20;
+            
+            html += `
+                <div class="gantt-bar ${typeClass}" 
+                     style="left: ${left}%; width: ${width}%;"
+                     onclick="showActivityDetail(${b.id})"
+                     title="${escapeHtml(charName)} - ${escapeHtml(getRoleLabel(role))}">
+                    ${escapeHtml(charName.substring(0, 4))}
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+    });
+    
+    html += '</div>';
+    html += `
+        <div class="gantt-time-labels">
+            <div class="gantt-time-label">00:00</div>
+            <div class="gantt-time-label">06:00</div>
+            <div class="gantt-time-label">12:00</div>
+            <div class="gantt-time-label">18:00</div>
+            <div class="gantt-time-label">24:00</div>
+        </div>
+    `;
+    
+    container.innerHTML = html;
+}
+
+/**
+ * 显示活动详情
+ * @param {number} bookingId - 预约ID
+ */
+function showActivityDetail(bookingId) {
+    const booking = allBookings.find(b => b.id === bookingId);
+    if (!booking) return;
+    
+    const charName = booking.character_name || booking.characterName || '未知角色';
+    const charRole = booking.character_role || booking.characterRole || '';
+    const charDps = booking.character_dps || booking.characterDps || booking.dps || '';
+    const baiyeName = booking.baiye_name || getBaiyeName(booking.baiye_id || booking.baiyeId);
+    const timeDesc = booking.time_slot_description || getTimeSlotName(booking.time_slot_id || booking.timeSlotId);
+    const remark = booking.remark || '';
+    const createdAt = booking.created_at || booking.createdAt || '';
+    
+    const content = document.getElementById('activity-detail-content');
+    content.innerHTML = `
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">角色名称</span>
+            <span class="activity-detail-value">${escapeHtml(charName)}</span>
+        </div>
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">职业类型</span>
+            <span class="activity-detail-value">${escapeHtml(getRoleLabel(charRole))}</span>
+        </div>
+        ${charDps ? `
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">秒伤</span>
+            <span class="activity-detail-value">${escapeHtml(String(charDps))} 万</span>
+        </div>
+        ` : ''}
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">所属百业</span>
+            <span class="activity-detail-value">${escapeHtml(baiyeName)}</span>
+        </div>
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">预约时段</span>
+            <span class="activity-detail-value">${escapeHtml(timeDesc)}</span>
+        </div>
+        ${remark ? `
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">备注</span>
+            <span class="activity-detail-value">${escapeHtml(remark)}</span>
+        </div>
+        ` : ''}
+        ${createdAt ? `
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">预约时间</span>
+            <span class="activity-detail-value">${new Date(createdAt).toLocaleString()}</span>
+        </div>
+        ` : ''}
+    `;
+    
+    openModal('activity-detail-modal');
+}
+
+/**
  * 更新所有百业下拉选择框
  */
 function updateBaiyeSelects() {
@@ -671,6 +834,7 @@ function bindEvents() {
     // 暴露删除函数到全局（供 onclick 调用）
     window._deleteBaiye = handleDeleteBaiye;
     window._deleteTimeSlot = handleDeleteTimeSlot;
+    window.showActivityDetail = showActivityDetail;
 }
 
 // ==================== 启动 ====================

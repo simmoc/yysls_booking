@@ -66,6 +66,42 @@
                 </div>
             </div>
 
+            <!-- 统计一览 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <h2>📊 统计一览</h2>
+                </div>
+                <div id="admin-stats-panel" class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total-bookings">0</div>
+                        <div class="stat-label">总预约数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total-characters">0</div>
+                        <div class="stat-label">预约角色数</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total-baiye">0</div>
+                        <div class="stat-label">百业数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-number" id="stat-total-slots">0</div>
+                        <div class="stat-label">时间段数</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 甘特图 - 预约活动 -->
+            <div class="card" style="grid-column: 1 / -1;">
+                <div class="card-header">
+                    <h2>📅 预约活动甘特图</h2>
+                    <span style="color: var(--text-secondary); font-size: 0.85rem;">点击活动查看详情</span>
+                </div>
+                <div id="gantt-chart-container" class="gantt-container">
+                    <p class="empty-tip">暂无预约数据</p>
+                </div>
+            </div>
+
             <!-- 预约管理 -->
             <div class="card">
                 <div class="card-header">
@@ -135,13 +171,37 @@
             </div>
             <div class="modal-body">
                 <div class="form-group">
-                    <label>时间描述 <span class="required">*</span></label>
-                    <input type="text" id="time-desc" class="form-control" placeholder="例如：周一至周五 20:00-22:00">
+                    <label>开始时间 <span class="required">*</span></label>
+                    <input type="time" id="time-start" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>结束时间 <span class="required">*</span></label>
+                    <input type="time" id="time-end" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label>备注说明</label>
+                    <input type="text" id="time-note" class="form-control" placeholder="例如：周一至周五">
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn" data-close="time-modal">取消</button>
                 <button class="btn btn-primary" id="btn-save-time">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 活动详情模态框 -->
+    <div id="activity-detail-modal" class="modal">
+        <div class="modal-content" style="max-width: 500px;">
+            <div class="modal-header">
+                <h3>活动详情</h3>
+                <button class="close-btn" data-close="activity-detail-modal">&times;</button>
+            </div>
+            <div class="modal-body" id="activity-detail-content">
+                <!-- 动态填充 -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn" data-close="activity-detail-modal">关闭</button>
             </div>
         </div>
     </div>
