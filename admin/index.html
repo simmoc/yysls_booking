@@ -50,11 +50,10 @@
                 </div>
             </div>
 
-            <!-- 成员管理 -->
+            <!-- 成员管理（预约角色列表） -->
             <div class="card">
                 <div class="card-header">
-                    <h2>成员管理</h2>
-                    <button class="btn btn-small btn-primary admin-action" id="btn-create-member">+ 添加成员</button>
+                    <h2>预约角色</h2>
                 </div>
                 <!-- 成员筛选 -->
                 <div class="member-filter">
@@ -63,7 +62,7 @@
                     </select>
                 </div>
                 <div id="admin-member-list" class="admin-list">
-                    <p class="empty-tip">暂无成员</p>
+                    <p class="empty-tip">暂无预约角色</p>
                 </div>
             </div>
 
@@ -143,32 +142,6 @@
             <div class="modal-footer">
                 <button class="btn" data-close="time-modal">取消</button>
                 <button class="btn btn-primary" id="btn-save-time">保存</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- 成员创建模态框 -->
-    <div id="member-modal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>添加成员</h3>
-                <button class="close-btn" data-close="member-modal">&times;</button>
-            </div>
-            <div class="modal-body">
-                <div class="form-group">
-                    <label>成员名称 <span class="required">*</span></label>
-                    <input type="text" id="member-name" class="form-control" placeholder="输入成员名称">
-                </div>
-                <div class="form-group">
-                    <label>所属百业 <span class="required">*</span></label>
-                    <select id="member-baiye" class="form-control">
-                        <option value="">请选择百业</option>
-                    </select>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button class="btn" data-close="member-modal">取消</button>
-                <button class="btn btn-primary" id="btn-save-member">保存</button>
             </div>
         </div>
     </div>

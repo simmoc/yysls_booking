@@ -8,13 +8,10 @@ import {
     getBaiyes,
     getTimeSlots,
     getBookings,
-    getMembers,
     createBaiye,
     createTimeSlot,
-    createMember,
     deleteBaiye,
     deleteTimeSlot,
-    deleteMember as apiDeleteMember,
     clearBookings,
     initDatabase
 } from '/shared/api-client.js';
@@ -272,9 +269,32 @@ function renderTimeSlotList() {
 async function loadMembers() {
     try {
         const filterBaiyeId = document.getElementById('member-filter-baiye')?.value;
-        const data = await getMembers(filterBaiyeId || undefined);
-        const members = data.data || data.members || data || [];
-        renderMemberList(members);
+        // 从预约列表获取角色（去重）
+        const filters = {};
+        if (filterBaiyeId) filters.baiyeId = filterBaiyeId;
+        const data = await getBookings(filters);
+        const bookings = data.data || data.bookings || data || [];
+        
+        // 提取角色信息并去重（按角色名称+百业）
+        const charactersMap = new Map();
+        bookings.forEach(b => {
+            const charName = b.character_name || b.characterName;
+            const baiyeId = b.baiye_id || b.baiyeId;
+            if (charName) {
+                const key = `${charName}_${baiyeId}`;
+                if (!charactersMap.has(key)) {
+                    charactersMap.set(key, {
+                        name: charName,
+                        role: b.character_role || b.characterRole || '',
+                        dps: b.character_dps || b.characterDps || b.dps || '',
+                        baiyeId: baiyeId,
+                        baiyeName: b.baiye_name || ''
+                    });
+                }
+            }
+        });
+        
+        renderMemberList(Array.from(charactersMap.values()));
     } catch (error) {
         console.error('加载成员失败:', error);
         renderMemberList([]);
@@ -282,91 +302,32 @@ async function loadMembers() {
 }
 
 /**
- * 处理创建成员
- */
-async function handleCreateMember() {
-    if (!checkAdmin()) return;
-
-    const nameInput = document.getElementById('member-name');
-    const baiyeSelect = document.getElementById('member-baiye');
-    const name = nameInput.value.trim();
-    const baiyeId = parseInt(baiyeSelect.value);
-
-    if (!name) {
-        showToast('请输入成员名称', 'error');
-        nameInput.focus();
-        return;
-    }
-
-    if (!baiyeId) {
-        showToast('请选择所属百业', 'error');
-        baiyeSelect.focus();
-        return;
-    }
-
-    try {
-        await createMember({ name, baiyeId }, currentUser.id, currentUser.role);
-        showToast('成员添加成功');
-        closeModal('member-modal');
-        nameInput.value = '';
-        baiyeSelect.value = '';
-        await loadMembers();
-    } catch (error) {
-        showToast('添加失败: ' + error.message, 'error');
-    }
-}
-
-/**
- * 处理删除成员
- * @param {number} id - 成员 ID
- * @param {string} name - 成员名称
- */
-async function handleDeleteMember(id, name) {
-    if (!checkAdmin()) return;
-
-    const confirmed = await showConfirm(`确定要删除成员「${name}」吗？`);
-    if (!confirmed) return;
-
-    try {
-        await apiDeleteMember(id, currentUser.id, currentUser.role);
-        showToast('成员已删除');
-        await loadMembers();
-    } catch (error) {
-        showToast('删除失败: ' + error.message, 'error');
-    }
-}
-
-/**
- * 渲染成员列表
- * @param {Array} members - 成员数组
+ * 渲染预约角色列表
+ * @param {Array} members - 角色数组
  */
 function renderMemberList(members) {
     const container = document.getElementById('admin-member-list');
 
     if (!members || !members.length) {
-        container.innerHTML = '<p class="empty-tip">暂无成员</p>';
+        container.innerHTML = '<p class="empty-tip">暂无预约角色</p>';
         return;
     }
 
     container.innerHTML = members.map(item => {
-        // 兼容蛇形和驼峰命名
-        const baiyeId = item.baiye_id || item.baiyeId;
-        const memberName = item.name || item.memberName || '未命名';
-
         // 查找百业名称（字符串比较）
-        const baiye = baiyes.find(b => String(b.id) === String(baiyeId));
-        const baiyeName = baiye ? baiye.name : '未知百业';
+        const baiye = baiyes.find(b => String(b.id) === String(item.baiyeId));
+        const baiyeName = baiye ? baiye.name : (item.baiyeName || '未知百业');
+        
+        // 职业标签
+        const roleTag = item.role ? `<span class="role-tag role-${escapeHtml(item.role)}">${escapeHtml(getRoleLabel(item.role))}</span>` : '';
 
         return `
             <div class="admin-item">
-                <div class="item-info">
-                    <span class="item-name">${escapeHtml(memberName)}</span>
+                <div class="item-info" style="flex-direction: row; align-items: center; gap: 8px;">
+                    <span class="item-name">${escapeHtml(item.name)}</span>
+                    ${roleTag}
+                    ${item.dps ? `<span class="item-desc">⚔️ ${escapeHtml(String(item.dps))}万</span>` : ''}
                     <span class="item-desc">所属百业: ${escapeHtml(baiyeName)}</span>
-                </div>
-                <div class="item-actions">
-                    <button class="btn-icon admin-action" title="删除" onclick="window._deleteMember(${item.id}, '${escapeHtml(memberName)}')">
-                        &#x1f5d1;
-                    </button>
                 </div>
             </div>
         `;
@@ -618,7 +579,6 @@ function getRoleLabel(role) {
 function updateBaiyeSelects() {
     const selects = [
         document.getElementById('member-filter-baiye'),
-        document.getElementById('member-baiye'),
         document.getElementById('booking-filter-baiye')
     ];
 
@@ -679,13 +639,6 @@ function bindEvents() {
     });
     document.getElementById('btn-save-time').addEventListener('click', handleCreateTimeSlot);
 
-    // 成员创建
-    document.getElementById('btn-create-member').addEventListener('click', () => {
-        if (!checkAdmin()) return;
-        openModal('member-modal');
-    });
-    document.getElementById('btn-save-member').addEventListener('click', handleCreateMember);
-
     // 预约清空
     document.getElementById('btn-clear-bookings').addEventListener('click', handleClearBookings);
 
@@ -718,7 +671,6 @@ function bindEvents() {
     // 暴露删除函数到全局（供 onclick 调用）
     window._deleteBaiye = handleDeleteBaiye;
     window._deleteTimeSlot = handleDeleteTimeSlot;
-    window._deleteMember = handleDeleteMember;
 }
 
 // ==================== 启动 ====================
