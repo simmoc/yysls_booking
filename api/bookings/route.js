@@ -91,6 +91,15 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'userId, baiyeId, and timeSlotId are required' });
       }
 
+      // 检查是否已预约该活动（同一用户+同百业+同时间段）
+      const existing = await sql`
+        SELECT id FROM bookings
+        WHERE user_id = ${parseInt(userId)} AND baiye_id = ${parseInt(baiyeId)} AND time_slot_id = ${parseInt(timeSlotId)}
+      `;
+      if (existing.length > 0) {
+        return res.status(400).json({ success: false, error: '你已经预约了该时段，不能重复预约' });
+      }
+
       // 检查同一场预约的限制
       const existingBookings = await sql`
         SELECT character_role FROM bookings WHERE baiye_id = ${parseInt(baiyeId)} AND time_slot_id = ${parseInt(timeSlotId)}
