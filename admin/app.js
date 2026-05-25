@@ -10,6 +10,7 @@ import {
     getBookings,
     createBaiye,
     createTimeSlot,
+    updateTimeSlot,
     deleteBaiye,
     deleteTimeSlot,
     clearBookings,
@@ -194,6 +195,47 @@ async function loadTimeSlots() {
 /**
  * 处理创建时间段
  */
+// 编辑时间段 ID（null 表示创建模式）
+let editingTimeSlotId = null;
+
+/**
+ * 打开时间段模态框（创建或编辑）
+ * @param {number|null} editId - 编辑时传入 ID，创建时传 null
+ * @param {string} editDesc - 编辑时传入描述
+ */
+function showTimeSlotModal(editId = null, editDesc = '') {
+    const modal = document.getElementById('time-modal');
+    const title = document.getElementById('time-modal-title');
+    const startInput = document.getElementById('time-start');
+    const endInput = document.getElementById('time-end');
+    const noteInput = document.getElementById('time-note');
+
+    editingTimeSlotId = editId;
+
+    if (editId) {
+        // 编辑模式：解析描述
+        title.textContent = '编辑时间段';
+        const match = editDesc.match(/(\d{1,2}:\d{2})\s*-\s*(\d{1,2}:\d{2})(?:\s*\((.+)\))?/);
+        if (match) {
+            startInput.value = match[1];
+            endInput.value = match[2];
+            noteInput.value = match[3] || '';
+        } else {
+            startInput.value = '';
+            endInput.value = '';
+            noteInput.value = editDesc;
+        }
+    } else {
+        // 创建模式
+        title.textContent = '创建时间段';
+        startInput.value = '';
+        endInput.value = '';
+        noteInput.value = '';
+    }
+
+    openModal('time-modal');
+}
+
 async function handleCreateTimeSlot() {
     if (!checkAdmin()) return;
 
@@ -217,16 +259,30 @@ async function handleCreateTimeSlot() {
     }
 
     try {
-        await createTimeSlot({ description }, currentUser.id, currentUser.role);
-        showToast('时间段创建成功');
+        if (editingTimeSlotId) {
+            // 编辑模式
+            await updateTimeSlot(editingTimeSlotId, { description }, currentUser.id, currentUser.role);
+            showToast('时间段更新成功');
+        } else {
+            // 创建模式
+            await createTimeSlot({ description }, currentUser.id, currentUser.role);
+            showToast('时间段创建成功');
+        }
         closeModal('time-modal');
-        startInput.value = '';
-        endInput.value = '';
-        noteInput.value = '';
+        editingTimeSlotId = null;
         await loadTimeSlots();
     } catch (error) {
-        showToast('创建失败: ' + error.message, 'error');
+        showToast(editingTimeSlotId ? '更新失败: ' + error.message : '创建失败: ' + error.message, 'error');
     }
+}
+
+/**
+ * 处理编辑时间段
+ * @param {number} id - 时间段 ID
+ * @param {string} desc - 时间段描述
+ */
+function handleEditTimeSlot(id, desc) {
+    showTimeSlotModal(id, desc);
 }
 
 /**
@@ -266,8 +322,11 @@ function renderTimeSlotList() {
                 <span class="item-name">${escapeHtml(item.description)}</span>
             </div>
             <div class="item-actions">
+                <button class="btn-icon admin-action" title="编辑" onclick="window._editTimeSlot(${item.id}, '${escapeHtml(item.description)}')">
+                    ✏️
+                </button>
                 <button class="btn-icon admin-action" title="删除" onclick="window._deleteTimeSlot(${item.id}, '${escapeHtml(item.description)}')">
-                    &#x1f5d1;
+                    🗑️
                 </button>
             </div>
         </div>
@@ -960,7 +1019,7 @@ function bindEvents() {
     // 时间段创建
     document.getElementById('btn-create-time').addEventListener('click', () => {
         if (!checkAdmin()) return;
-        openModal('time-modal');
+        showTimeSlotModal();
     });
     document.getElementById('btn-save-time').addEventListener('click', handleCreateTimeSlot);
 
@@ -1007,6 +1066,7 @@ function bindEvents() {
     // 暴露删除函数到全局（供 onclick 调用）
     window._deleteBaiye = handleDeleteBaiye;
     window._deleteTimeSlot = handleDeleteTimeSlot;
+    window._editTimeSlot = handleEditTimeSlot;
     window.showActivityDetail = showActivityDetail;
 }
 

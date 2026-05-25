@@ -107,6 +107,21 @@ export async function createTimeSlot(data, userId, userRole) {
 }
 
 /**
+ * 更新时间段
+ * @param {number} slotId - 时间段 ID
+ * @param {object} data - 时间段数据 { description }
+ * @param {string} userId - 用户 ID
+ * @param {string} userRole - 用户角色
+ * @returns {Promise<object>} 更新后的时间段
+ */
+export async function updateTimeSlot(slotId, data, userId, userRole) {
+    return request(`/time-slots?slotId=${slotId}&userId=${encodeURIComponent(userId)}&userRole=${encodeURIComponent(userRole)}`, {
+        method: 'PUT',
+        body: JSON.stringify(data)
+    });
+}
+
+/**
  * 删除时间段
  * @param {number} slotId - 时间段 ID
  * @param {string} userId - 用户 ID
