@@ -18,7 +18,7 @@ export default async function handler(req, res) {
 
       if (baiyeId && timeSlotId) {
         result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
                  b.baiye_id, b.time_slot_id, b.remark, b.created_at,
                  by.name AS baiye_name, ts.description AS time_slot_description
           FROM bookings b
@@ -29,7 +29,7 @@ export default async function handler(req, res) {
         `;
       } else if (baiyeId) {
         result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
                  b.baiye_id, b.time_slot_id, b.remark, b.created_at,
                  by.name AS baiye_name, ts.description AS time_slot_description
           FROM bookings b
@@ -40,7 +40,7 @@ export default async function handler(req, res) {
         `;
       } else if (timeSlotId) {
         result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
                  b.baiye_id, b.time_slot_id, b.remark, b.created_at,
                  by.name AS baiye_name, ts.description AS time_slot_description
           FROM bookings b
@@ -51,7 +51,7 @@ export default async function handler(req, res) {
         `;
       } else {
         result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
                  b.baiye_id, b.time_slot_id, b.remark, b.created_at,
                  by.name AS baiye_name, ts.description AS time_slot_description
           FROM bookings b
