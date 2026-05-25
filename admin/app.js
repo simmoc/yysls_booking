@@ -349,18 +349,22 @@ function renderMemberList(members) {
     }
 
     container.innerHTML = members.map(item => {
-        // 查找百业名称
-        const baiye = baiyes.find(b => b.id === item.baiyeId);
+        // 兼容蛇形和驼峰命名
+        const baiyeId = item.baiye_id || item.baiyeId;
+        const memberName = item.name || item.memberName || '未命名';
+
+        // 查找百业名称（字符串比较）
+        const baiye = baiyes.find(b => String(b.id) === String(baiyeId));
         const baiyeName = baiye ? baiye.name : '未知百业';
 
         return `
             <div class="admin-item">
                 <div class="item-info">
-                    <span class="item-name">${escapeHtml(item.name)}</span>
+                    <span class="item-name">${escapeHtml(memberName)}</span>
                     <span class="item-desc">所属百业: ${escapeHtml(baiyeName)}</span>
                 </div>
                 <div class="item-actions">
-                    <button class="btn-icon admin-action" title="删除" onclick="window._deleteMember(${item.id}, '${escapeHtml(item.name)}')">
+                    <button class="btn-icon admin-action" title="删除" onclick="window._deleteMember(${item.id}, '${escapeHtml(memberName)}')">
                         &#x1f5d1;
                     </button>
                 </div>
@@ -421,32 +425,39 @@ function renderBookingList(bookings) {
     }
 
     container.innerHTML = bookings.map(item => {
-        // 查找百业名称
-        const baiye = baiyes.find(b => b.id === item.baiyeId);
+        // 兼容蛇形和驼峰命名
+        const baiyeId = item.baiye_id || item.baiyeId;
+        const timeSlotId = item.time_slot_id || item.timeSlotId;
+        const charName = item.character_name || item.characterName || item.memberName || '未知角色';
+        const charRole = item.character_role || item.characterRole || '';
+        const charDps = item.character_dps || item.characterDps || item.dps || '';
+        const remark = item.remark || '';
+
+        // 查找百业名称（字符串比较）
+        const baiye = baiyes.find(b => String(b.id) === String(baiyeId));
         const baiyeName = baiye ? baiye.name : '未知百业';
 
-        // 查找时间段描述
-        const slot = timeSlots.find(t => t.id === item.timeSlotId);
+        // 查找时间段描述（字符串比较）
+        const slot = timeSlots.find(t => String(t.id) === String(timeSlotId));
         const timeDesc = slot ? slot.description : '未知时段';
 
         // 职业类型标签
-        const role = item.characterRole || item.character_role;
-        const roleTag = role ? `<span class="role-tag role-${escapeHtml(role)}">${escapeHtml(getRoleLabel(role))}</span>` : '';
+        const roleTag = charRole ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>` : '';
 
         return `
             <div class="admin-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
                     <div class="item-info" style="flex-direction: row; align-items: center; gap: 8px;">
-                        <span class="item-name">${escapeHtml(item.characterName || item.memberName || '未知角色')}</span>
+                        <span class="item-name">${escapeHtml(charName)}</span>
                         ${roleTag}
-                        ${item.dps ? `<span class="item-desc">秒伤: ${escapeHtml(String(item.dps))}万</span>` : ''}
+                        ${charDps ? `<span class="item-desc">秒伤: ${escapeHtml(String(charDps))}万</span>` : ''}
                     </div>
                     <span class="item-desc" style="font-size: 0.8rem;">#${item.id}</span>
                 </div>
                 <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.9rem; color: var(--text-secondary);">
                     <span>百业: ${escapeHtml(baiyeName)}</span>
                     <span>时间: ${escapeHtml(timeDesc)}</span>
-                    ${item.remark ? `<span>备注: ${escapeHtml(item.remark)}</span>` : ''}
+                    ${remark ? `<span>备注: ${escapeHtml(remark)}</span>` : ''}
                 </div>
             </div>
         `;
