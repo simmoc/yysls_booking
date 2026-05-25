@@ -648,14 +648,18 @@ function renderBookingList(bookings) {
 
     container.innerHTML = bookings.map(booking => {
         const id = booking.id || booking._id;
-        const charName = booking.characterName || booking.name || '未知角色';
-        const dps = booking.dps || '';
-        const baiyeName = getBaiyeName(booking.baiyeId);
-        const timeName = getTimeSlotName(booking.timeSlotId);
+        // 兼容蛇形和驼峰命名
+        const charName = booking.character_name || booking.characterName || booking.name || '未知角色';
+        const charRole = booking.character_role || booking.characterRole || '';
+        const charDps = booking.character_dps || booking.characterDps || booking.dps || '';
+        const baiyeId = booking.baiye_id || booking.baiyeId;
+        const timeSlotId = booking.time_slot_id || booking.timeSlotId;
+        const baiyeName = booking.baiye_name || getBaiyeName(baiyeId);
+        const timeName = booking.time_slot_description || getTimeSlotName(timeSlotId);
         const remark = booking.remark || '';
-        const isOwner = currentUser && (booking.userId === currentUser.id || booking.fingerprint === currentUser.fingerprint);
-        const roleTag = booking.characterRole
-            ? `<span class="role-tag role-${escapeHtml(booking.characterRole)}">${escapeHtml(getRoleLabel(booking.characterRole))}</span>`
+        const isOwner = currentUser && (booking.user_id === currentUser.id || booking.userId === currentUser.id);
+        const roleTag = charRole
+            ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>`
             : '';
 
         return `
@@ -664,16 +668,16 @@ function renderBookingList(bookings) {
                     <div class="booking-header">
                         <span class="booking-char">${escapeHtml(charName)}</span>
                         ${roleTag}
-                        ${dps ? `<span class="booking-dps">${escapeHtml(dps)} 万</span>` : ''}
+                        ${charDps ? `<span class="booking-dps">⚔️ ${escapeHtml(charDps)}万</span>` : ''}
                     </div>
                     <div class="booking-detail">
-                        <span class="booking-baiye">&#127970; ${escapeHtml(baiyeName)}</span>
-                        <span class="booking-time">&#128339; ${escapeHtml(timeName)}</span>
+                        <span class="booking-baiye">🏢 ${escapeHtml(baiyeName)}</span>
+                        <span class="booking-time">⏰ ${escapeHtml(timeName)}</span>
                     </div>
-                    ${remark ? `<div class="booking-remark">&#128172; ${escapeHtml(remark)}</div>` : ''}
+                    ${remark ? `<div class="booking-remark">📝 ${escapeHtml(remark)}</div>` : ''}
                 </div>
                 <div class="booking-actions">
-                    <button class="btn-icon btn-view-members" data-baiye-id="${escapeHtml(booking.baiyeId)}" title="查看成员">👥</button>
+                    <button class="btn-icon btn-view-members" data-baiye-id="${escapeHtml(baiyeId)}" data-time-slot-id="${escapeHtml(timeSlotId)}" title="查看详情">👥</button>
                     ${isOwner ? `<button class="btn btn-small btn-danger" onclick="window._removeBooking('${escapeHtml(id)}')">取消预约</button>` : ''}
                 </div>
             </div>
@@ -792,36 +796,69 @@ window.closeShareBanner = closeShareBanner;
 // ==================== 查看成员列表 ====================
 
 /**
- * 查看指定百业的成员列表
+ * 查看指定百业+时间段的预约角色详情
  * @param {number|string} baiyeId - 百业 ID
+ * @param {number|string} timeSlotId - 时间段 ID
  */
-async function viewMembers(baiyeId) {
+async function viewBookingDetail(baiyeId, timeSlotId) {
     const modal = document.getElementById('members-modal');
     const title = document.getElementById('members-modal-title');
     const content = document.getElementById('members-list-content');
 
-    // 查找百业名称
     const baiye = baiyes.find(b => String(b.id) === String(baiyeId));
-    title.textContent = baiye ? `${baiye.name} - 成员列表` : '成员列表';
+    const slot = timeSlots.find(t => String(t.id) === String(timeSlotId));
+    title.textContent = `${baiye ? baiye.name : '百业'} - ${slot ? slot.description : '时段'}`;
 
     content.innerHTML = '<div class="loading-inline">加载中...</div>';
     openModal('members-modal');
 
     try {
-        const data = await getMembers(baiyeId);
-        const members = data.data || data.members || data || [];
+        // 从 API 获取该百业+时间段的预约列表
+        const filters = { baiyeId, timeSlotId };
+        const data = await getBookings(filters);
+        const bookings = data.data || data.bookings || data || [];
 
-        if (members.length === 0) {
-            content.innerHTML = '<p class="empty-tip">该百业暂无成员</p>';
+        if (bookings.length === 0) {
+            content.innerHTML = '<p class="empty-tip">该时段暂无预约</p>';
             return;
         }
 
-        content.innerHTML = members.map(m => `
-            <div class="member-item-inline">
-                <span class="member-name-inline">${escapeHtml(m.name)}</span>
-                ${m.baiye_name ? `<span class="member-baiye-inline">${escapeHtml(m.baiye_name)}</span>` : ''}
+        // 统计
+        const total = bookings.length;
+        const healers = bookings.filter(b => (b.character_role || b.characterRole) === '奶妈').length;
+        const tanks = bookings.filter(b => (b.character_role || b.characterRole) === '承伤').length;
+        const dpsCount = bookings.filter(b => (b.character_role || b.characterRole) === '输出').length;
+
+        let html = `
+            <div class="detail-stats">
+                <div class="stat-row"><span class="stat-label">总人数</span><span class="stat-value">${total}/10</span></div>
+                <div class="stat-row"><span class="stat-label">🗡️ 输出</span><span class="stat-value">${dpsCount}</span></div>
+                <div class="stat-row"><span class="stat-label">🛡️ 承伤</span><span class="stat-value">${tanks}</span></div>
+                <div class="stat-row"><span class="stat-label">💚 奶妈</span><span class="stat-value">${healers}/3</span></div>
             </div>
-        `).join('');
+        `;
+
+        html += bookings.map(b => {
+            const name = b.character_name || b.characterName || '未知角色';
+            const role = b.character_role || b.characterRole || '';
+            const dps = b.character_dps || b.characterDps || '';
+            const remark = b.remark || '';
+            const roleTag = role ? `<span class="role-tag role-${escapeHtml(role)}">${escapeHtml(getRoleLabel(role))}</span>` : '';
+            return `
+                <div class="member-item-inline">
+                    <div class="member-detail-left">
+                        <span class="member-name-inline">${escapeHtml(name)}</span>
+                        ${roleTag}
+                    </div>
+                    <div class="member-detail-right">
+                        ${dps ? `<span class="member-dps-inline">⚔️ ${escapeHtml(dps)}万</span>` : ''}
+                    </div>
+                    ${remark ? `<div class="member-remark-inline">📝 ${escapeHtml(remark)}</div>` : ''}
+                </div>
+            `;
+        }).join('');
+
+        content.innerHTML = html;
     } catch (error) {
         content.innerHTML = `<p class="empty-tip">加载失败: ${escapeHtml(error.message)}</p>`;
     }
@@ -883,12 +920,13 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('filter-baiye').addEventListener('change', loadBookings);
     document.getElementById('filter-time').addEventListener('change', loadBookings);
 
-    // 预约列表事件委托（查看成员按钮）
+    // 预约列表事件委托（查看详情按钮）
     document.getElementById('booking-list').addEventListener('click', (e) => {
         const memberBtn = e.target.closest('.btn-view-members');
         if (memberBtn) {
             const baiyeId = memberBtn.dataset.baiyeId;
-            if (baiyeId) viewMembers(baiyeId);
+            const timeSlotId = memberBtn.dataset.timeSlotId;
+            if (baiyeId && timeSlotId) viewBookingDetail(baiyeId, timeSlotId);
         }
     });
 
