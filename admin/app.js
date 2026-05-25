@@ -392,7 +392,7 @@ async function handleClearBookings() {
 }
 
 /**
- * 渲染预约列表
+ * 渲染预约列表 - 按时间段分组展示
  * @param {Array} bookings - 预约数组
  */
 function renderBookingList(bookings) {
@@ -403,44 +403,80 @@ function renderBookingList(bookings) {
         return;
     }
 
-    container.innerHTML = bookings.map(item => {
-        // 兼容蛇形和驼峰命名
-        const baiyeId = item.baiye_id || item.baiyeId;
+    // 按时间段+百业分组
+    const grouped = {};
+    bookings.forEach(item => {
         const timeSlotId = item.time_slot_id || item.timeSlotId;
-        const charName = item.character_name || item.characterName || item.memberName || '未知角色';
-        const charRole = item.character_role || item.characterRole || '';
-        const charDps = item.character_dps || item.characterDps || item.dps || '';
-        const remark = item.remark || '';
+        const timeDesc = item.time_slot_description || getTimeSlotName(timeSlotId);
+        const baiyeId = item.baiye_id || item.baiyeId;
+        const baiyeName = item.baiye_name || getBaiyeName(baiyeId);
+        
+        const groupKey = `${timeDesc}_${baiyeName}`;
+        if (!grouped[groupKey]) {
+            grouped[groupKey] = {
+                timeDesc,
+                baiyeName,
+                timeRange: parseTimeRange(timeDesc),
+                bookings: []
+            };
+        }
+        grouped[groupKey].bookings.push(item);
+    });
 
-        // 查找百业名称（字符串比较）
-        const baiye = baiyes.find(b => String(b.id) === String(baiyeId));
-        const baiyeName = baiye ? baiye.name : '未知百业';
+    // 按时间排序
+    const sortedGroups = Object.values(grouped).sort((a, b) => a.timeRange.start - b.timeRange.start);
 
-        // 查找时间段描述（字符串比较）
-        const slot = timeSlots.find(t => String(t.id) === String(timeSlotId));
-        const timeDesc = slot ? slot.description : '未知时段';
-
-        // 职业类型标签
-        const roleTag = charRole ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>` : '';
-
-        return `
-            <div class="admin-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
-                <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <div class="item-info" style="flex-direction: row; align-items: center; gap: 8px;">
-                        <span class="item-name">${escapeHtml(charName)}</span>
-                        ${roleTag}
-                        ${charDps ? `<span class="item-desc">秒伤: ${escapeHtml(String(charDps))}万</span>` : ''}
+    // 生成 HTML
+    let html = '';
+    sortedGroups.forEach(group => {
+        const { timeDesc, baiyeName, bookings: groupBookings } = group;
+        
+        // 统计
+        const healerCount = groupBookings.filter(b => (b.character_role || b.characterRole) === '奶妈').length;
+        const tankCount = groupBookings.filter(b => (b.character_role || b.characterRole) === '承伤').length;
+        const dpsCount = groupBookings.filter(b => (b.character_role || b.characterRole) === '输出').length;
+        
+        html += `
+            <div class="booking-group" style="margin-bottom: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
+                <div class="booking-group-header" style="background: linear-gradient(135deg, var(--primary-color), #4a6fa5); color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.05rem;">${escapeHtml(timeDesc)}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 2px;">${escapeHtml(baiyeName)}</div>
                     </div>
-                    <span class="item-desc" style="font-size: 0.8rem;">#${item.id}</span>
+                    <div style="text-align: right; font-size: 0.8rem;">
+                        <div>💚${healerCount} 🛡️${tankCount} 🗡️${dpsCount}</div>
+                        <div>共 ${groupBookings.length} 人</div>
+                    </div>
                 </div>
-                <div style="display: flex; gap: 16px; flex-wrap: wrap; font-size: 0.9rem; color: var(--text-secondary);">
-                    <span>百业: ${escapeHtml(baiyeName)}</span>
-                    <span>时间: ${escapeHtml(timeDesc)}</span>
-                    ${remark ? `<span>备注: ${escapeHtml(remark)}</span>` : ''}
-                </div>
-            </div>
+                <div class="booking-group-body" style="padding: 8px;">
         `;
-    }).join('');
+        
+        groupBookings.forEach(item => {
+            const charName = item.character_name || item.characterName || '未知角色';
+            const charRole = item.character_role || item.characterRole || '';
+            const charDps = item.character_dps || item.characterDps || item.dps || '';
+            const remark = item.remark || '';
+            const roleTag = charRole ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>` : '';
+            
+            html += `
+                <div class="admin-item" style="padding: 8px 12px; margin-bottom: 4px; background: var(--bg-color); border-radius: 4px;">
+                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div class="item-info" style="flex-direction: row; align-items: center; gap: 8px;">
+                            <span class="item-name">${escapeHtml(charName)}</span>
+                            ${roleTag}
+                            ${charDps ? `<span class="item-desc">⚔️ ${escapeHtml(String(charDps))}万</span>` : ''}
+                        </div>
+                        <span class="item-desc" style="font-size: 0.75rem;">#${item.id}</span>
+                    </div>
+                    ${remark ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">📝 ${escapeHtml(remark)}</div>` : ''}
+                </div>
+            `;
+        });
+        
+        html += '</div></div>';
+    });
+
+    container.innerHTML = html;
 }
 
 // ==================== 数据库管理 ====================
@@ -611,6 +647,29 @@ function updateStats(bookings) {
 }
 
 /**
+ * 解析时间段描述获取开始和结束时间（分钟）
+ * @param {string} desc - 时间段描述，如 "20:00-22:00 (周一至周五)"
+ * @returns {object} {start: 开始分钟, end: 结束分钟}
+ */
+function parseTimeRange(desc) {
+    if (!desc) return { start: 0, end: 1440 };
+    
+    // 匹配时间格式 HH:MM-HH:MM
+    const match = desc.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if (!match) return { start: 0, end: 1440 };
+    
+    const startHour = parseInt(match[1]);
+    const startMin = parseInt(match[2]);
+    const endHour = parseInt(match[3]);
+    const endMin = parseInt(match[4]);
+    
+    return {
+        start: startHour * 60 + startMin,
+        end: endHour * 60 + endMin
+    };
+}
+
+/**
  * 渲染甘特图
  * @param {Array} bookings - 预约数组
  */
@@ -622,41 +681,58 @@ function renderGanttChart(bookings) {
         return;
     }
     
-    // 按百业分组预约
-    const bookingsByBaiye = {};
+    // 按时间段分组预约
+    const bookingsByTimeSlot = {};
     bookings.forEach(b => {
-        const baiyeId = b.baiye_id || b.baiyeId;
-        const baiyeName = b.baiye_name || getBaiyeName(baiyeId);
-        if (!bookingsByBaiye[baiyeName]) {
-            bookingsByBaiye[baiyeName] = [];
+        const timeSlotId = b.time_slot_id || b.timeSlotId;
+        const timeDesc = b.time_slot_description || getTimeSlotName(timeSlotId);
+        if (!bookingsByTimeSlot[timeDesc]) {
+            bookingsByTimeSlot[timeDesc] = { bookings: [], timeRange: parseTimeRange(timeDesc) };
         }
-        bookingsByBaiye[baiyeName].push(b);
+        bookingsByTimeSlot[timeDesc].bookings.push(b);
     });
     
-    // 生成甘特图 HTML
+    // 找出最早和最晚的时间范围
+    let globalStart = 1440, globalEnd = 0;
+    Object.values(bookingsByTimeSlot).forEach(group => {
+        globalStart = Math.min(globalStart, group.timeRange.start);
+        globalEnd = Math.max(globalEnd, group.timeRange.end);
+    });
+    const totalMinutes = globalEnd - globalStart || 1440;
+    
+    // 生成甘特图 HTML - 按时间段作为行
     let html = '<div class="gantt-chart">';
     
-    Object.entries(bookingsByBaiye).forEach(([baiyeName, baiyeBookings]) => {
+    Object.entries(bookingsByTimeSlot).forEach(([timeDesc, group]) => {
+        const { timeRange, bookings: slotBookings } = group;
+        
+        // 计算该时间段在甘特图中的位置
+        const left = ((timeRange.start - globalStart) / totalMinutes) * 100;
+        const width = ((timeRange.end - timeRange.start) / totalMinutes) * 100;
+        
         html += `
             <div class="gantt-row">
-                <div class="gantt-label">${escapeHtml(baiyeName)}</div>
+                <div class="gantt-label" title="${escapeHtml(timeDesc)}">${escapeHtml(timeDesc.substring(0, 15))}</div>
                 <div class="gantt-timeline">
+                    <div class="gantt-time-block" style="left: ${left}%; width: ${width}%; background: rgba(74, 111, 165, 0.1); border-radius: 6px; position: absolute; height: 32px;"></div>
         `;
         
-        baiyeBookings.forEach((b, index) => {
+        // 在该时间段内分布预约角色
+        slotBookings.forEach((b, index) => {
             const role = b.character_role || b.characterRole || '';
             const charName = b.character_name || b.characterName || '未知';
+            const baiyeName = b.baiye_name || getBaiyeName(b.baiye_id || b.baiyeId);
             const typeClass = role === '奶妈' ? 'type-healer' : (role === '承伤' ? 'type-tank' : 'type-dps');
             
-            // 计算位置（简单按索引分布）
-            const left = (index * 25) % 100;
-            const width = 20;
+            // 在时间段内分布（垂直堆叠）
+            const barLeft = left + (index * (width / Math.max(slotBookings.length, 1)));
+            const barWidth = width / Math.max(slotBookings.length, 1) - 2;
             
             html += `
                 <div class="gantt-bar ${typeClass}" 
-                     style="left: ${left}%; width: ${width}%;"
+                     style="left: ${barLeft}%; width: ${Math.max(barWidth, 5)}%;"
                      onclick="showActivityDetail(${b.id})"
-                     title="${escapeHtml(charName)} - ${escapeHtml(getRoleLabel(role))}">
+                     title="${escapeHtml(charName)} [${escapeHtml(baiyeName)}] - ${escapeHtml(getRoleLabel(role))}">
                     ${escapeHtml(charName.substring(0, 4))}
                 </div>
             `;
@@ -666,15 +742,19 @@ function renderGanttChart(bookings) {
     });
     
     html += '</div>';
-    html += `
-        <div class="gantt-time-labels">
-            <div class="gantt-time-label">00:00</div>
-            <div class="gantt-time-label">06:00</div>
-            <div class="gantt-time-label">12:00</div>
-            <div class="gantt-time-label">18:00</div>
-            <div class="gantt-time-label">24:00</div>
-        </div>
-    `;
+    
+    // 时间轴标签
+    const timeLabels = [];
+    for (let h = Math.floor(globalStart / 60); h <= Math.ceil(globalEnd / 60); h++) {
+        timeLabels.push(`${h.toString().padStart(2, '0')}:00`);
+    }
+    
+    html += `<div class="gantt-time-labels" style="margin-left: 132px;">`;
+    timeLabels.forEach((label, i) => {
+        const left = (i / (timeLabels.length - 1)) * 100;
+        html += `<div class="gantt-time-label" style="position: absolute; left: ${left}%; transform: translateX(-50%);">${label}</div>`;
+    });
+    html += '</div>';
     
     container.innerHTML = html;
 }
