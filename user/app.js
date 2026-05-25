@@ -532,7 +532,8 @@ async function copyShareLink() {
  * @returns {string} 百业名称
  */
 function getBaiyeName(id) {
-    const item = baiyes.find(b => (b.id || b._id) === id);
+    const strId = String(id);
+    const item = baiyes.find(b => String(b.id || b._id) === strId);
     return item ? (item.name || item.baiyeName || '未知百业') : '未知百业';
 }
 
@@ -542,7 +543,8 @@ function getBaiyeName(id) {
  * @returns {string} 时间段描述
  */
 function getTimeSlotName(id) {
-    const item = timeSlots.find(t => (t.id || t._id) === id);
+    const strId = String(id);
+    const item = timeSlots.find(t => String(t.id || t._id) === strId);
     return item ? (item.description || item.timeDesc || item.name || '未知时间') : '未知时间';
 }
 
