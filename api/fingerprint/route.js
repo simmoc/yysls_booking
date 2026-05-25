@@ -6,26 +6,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'Content-Type,Authorization',
 };
 
-export default async function handler(req) {
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', corsHeaders['Access-Control-Allow-Origin']);
+  res.setHeader('Access-Control-Allow-Methods', corsHeaders['Access-Control-Allow-Methods']);
+  res.setHeader('Access-Control-Allow-Headers', corsHeaders['Access-Control-Allow-Headers']);
+
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return res.status(200).end();
   }
 
   if (req.method !== 'POST') {
-    return new Response(
-      JSON.stringify({ success: false, error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   }
 
   try {
-    const { fingerprint } = await req.json();
+    const { fingerprint } = req.body;
 
     if (!fingerprint) {
-      return new Response(
-        JSON.stringify({ success: false, error: 'fingerprint is required' }),
-        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return res.status(400).json({ success: false, error: 'fingerprint is required' });
     }
 
     const result = await pool.query(
@@ -43,14 +41,8 @@ export default async function handler(req) {
       user = existing.rows[0];
     }
 
-    return new Response(
-      JSON.stringify({ success: true, user }),
-      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return res.status(200).json({ success: true, user });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return res.status(500).json({ success: false, error: error.message });
   }
 }

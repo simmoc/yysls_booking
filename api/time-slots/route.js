@@ -1,14 +1,12 @@
 import { pool, sql } from '../_lib/db.js';
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET,POST,DELETE,OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type,Authorization',
-};
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type,Authorization');
 
-export default async function handler(req) {
   if (req.method === 'OPTIONS') {
-    return new Response(null, { status: 200, headers: corsHeaders });
+    return res.status(200).end();
   }
 
   try {
@@ -16,30 +14,20 @@ export default async function handler(req) {
       const result = await pool.query(
         sql`SELECT id, description, created_at FROM time_slots ORDER BY id ASC`
       );
-      return new Response(
-        JSON.stringify({ success: true, data: result.rows }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return res.status(200).json({ success: true, data: result.rows });
     }
 
     if (req.method === 'POST') {
-      const url = new URL(req.url);
-      const userRole = url.searchParams.get('userRole');
+      const userRole = req.query.userRole;
 
       if (userRole !== 'admin') {
-        return new Response(
-          JSON.stringify({ success: false, error: 'Admin access required' }),
-          { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return res.status(403).json({ success: false, error: 'Admin access required' });
       }
 
-      const { description } = await req.json();
+      const { description } = req.body;
 
       if (!description) {
-        return new Response(
-          JSON.stringify({ success: false, error: 'description is required' }),
-          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-        );
+        return res.status(400).json({ success: false, error: 'description is required' });
       }
 
       const result = await pool.query(
@@ -47,20 +35,23 @@ export default async function handler(req) {
             RETURNING id, description, created_at`
       );
 
-      return new Response(
-        JSON.stringify({ success: true, data: result.rows[0] }),
-        { status: 201, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      return res.status(201).json({ success: true, data: result.rows[0] });
     }
 
-    return new Response(
-      JSON.stringify({ success: false, error: 'Method not allowed' }),
-      { status: 405, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    if (req.method === 'DELETE') {
+      const userRole = req.query.userRole;
+      const slotId = req.query.slotId;
+
+      if (userRole !== 'admin') {
+        return res.status(403).json({ success: false, error: 'Admin access required' });
+      }
+
+      await pool.query(sql`DELETE FROM time_slots WHERE id = ${parseInt(slotId)}`);
+      return res.status(200).json({ success: true });
+    }
+
+    return res.status(405).json({ success: false, error: 'Method not allowed' });
   } catch (error) {
-    return new Response(
-      JSON.stringify({ success: false, error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
+    return res.status(500).json({ success: false, error: error.message });
   }
 }
