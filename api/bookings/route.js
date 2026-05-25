@@ -14,29 +14,52 @@ export default async function handler(req, res) {
       const baiyeId = req.query.baiyeId;
       const timeSlotId = req.query.timeSlotId;
 
-      let query = sql`SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
-                      b.baiye_id, b.time_slot_id, b.remark, b.created_at,
-                      by.name AS baiye_name, ts.description AS time_slot_description
-                      FROM bookings b
-                      JOIN baiye by ON b.baiye_id = by.id
-                      JOIN time_slots ts ON b.time_slot_id = ts.id`;
+      let result;
 
-      const conditions = [];
-
-      if (baiyeId) {
-        conditions.push(sql`b.baiye_id = ${parseInt(baiyeId)}`);
+      if (baiyeId && timeSlotId) {
+        result = await sql`
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
+                 by.name AS baiye_name, ts.description AS time_slot_description
+          FROM bookings b
+          JOIN baiye by ON b.baiye_id = by.id
+          JOIN time_slots ts ON b.time_slot_id = ts.id
+          WHERE b.baiye_id = ${parseInt(baiyeId)} AND b.time_slot_id = ${parseInt(timeSlotId)}
+          ORDER BY b.created_at DESC
+        `;
+      } else if (baiyeId) {
+        result = await sql`
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
+                 by.name AS baiye_name, ts.description AS time_slot_description
+          FROM bookings b
+          JOIN baiye by ON b.baiye_id = by.id
+          JOIN time_slots ts ON b.time_slot_id = ts.id
+          WHERE b.baiye_id = ${parseInt(baiyeId)}
+          ORDER BY b.created_at DESC
+        `;
+      } else if (timeSlotId) {
+        result = await sql`
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
+                 by.name AS baiye_name, ts.description AS time_slot_description
+          FROM bookings b
+          JOIN baiye by ON b.baiye_id = by.id
+          JOIN time_slots ts ON b.time_slot_id = ts.id
+          WHERE b.time_slot_id = ${parseInt(timeSlotId)}
+          ORDER BY b.created_at DESC
+        `;
+      } else {
+        result = await sql`
+          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
+                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
+                 by.name AS baiye_name, ts.description AS time_slot_description
+          FROM bookings b
+          JOIN baiye by ON b.baiye_id = by.id
+          JOIN time_slots ts ON b.time_slot_id = ts.id
+          ORDER BY b.created_at DESC
+        `;
       }
-      if (timeSlotId) {
-        conditions.push(sql`b.time_slot_id = ${parseInt(timeSlotId)}`);
-      }
-
-      if (conditions.length > 0) {
-        query = sql`${query} WHERE ${sql.join(conditions, sql` AND `)}`;
-      }
-
-      query = sql`${query} ORDER BY b.created_at DESC`;
-
-      const result = await query;
 
       // 计算统计信息（按百业和时间段分组）
       const stats = {};
@@ -136,6 +159,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   } catch (error) {
+    console.error('API Error:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }

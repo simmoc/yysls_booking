@@ -13,18 +13,27 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const baiyeId = req.query.baiyeId;
 
-      let query = sql`SELECT m.id, m.name, m.baiye_id, m.created_at,
-                      by.name AS baiye_name
-                      FROM members m
-                      JOIN baiye by ON m.baiye_id = by.id`;
+      let result;
 
       if (baiyeId) {
-        query = sql`${query} WHERE m.baiye_id = ${parseInt(baiyeId)}`;
+        result = await sql`
+          SELECT m.id, m.name, m.baiye_id, m.created_at,
+                 by.name AS baiye_name
+          FROM members m
+          JOIN baiye by ON m.baiye_id = by.id
+          WHERE m.baiye_id = ${parseInt(baiyeId)}
+          ORDER BY m.created_at DESC
+        `;
+      } else {
+        result = await sql`
+          SELECT m.id, m.name, m.baiye_id, m.created_at,
+                 by.name AS baiye_name
+          FROM members m
+          JOIN baiye by ON m.baiye_id = by.id
+          ORDER BY m.created_at DESC
+        `;
       }
 
-      query = sql`${query} ORDER BY m.created_at DESC`;
-
-      const result = await query;
       return res.status(200).json({ success: true, data: result });
     }
 
@@ -67,6 +76,7 @@ export default async function handler(req, res) {
 
     return res.status(405).json({ success: false, error: 'Method not allowed' });
   } catch (error) {
+    console.error('API Error:', error);
     return res.status(500).json({ success: false, error: error.message });
   }
 }
