@@ -1,4 +1,4 @@
-import { pool, sql } from '../_lib/db.js';
+import { sql } from '../_lib/db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -24,8 +24,8 @@ export default async function handler(req, res) {
 
       query = sql`${query} ORDER BY m.created_at DESC`;
 
-      const result = await pool.query(query);
-      return res.status(200).json({ success: true, data: result.rows });
+      const result = await query;
+      return res.status(200).json({ success: true, data: result });
     }
 
     if (req.method === 'POST') {
@@ -41,12 +41,12 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'name and baiyeId are required' });
       }
 
-      const result = await pool.query(
-        sql`INSERT INTO members (name, baiye_id) VALUES (${name}, ${parseInt(baiyeId)})
-            RETURNING id, name, baiye_id, created_at`
-      );
+      const result = await sql`
+        INSERT INTO members (name, baiye_id) VALUES (${name}, ${parseInt(baiyeId)})
+        RETURNING id, name, baiye_id, created_at
+      `;
 
-      return res.status(201).json({ success: true, data: result.rows[0] });
+      return res.status(201).json({ success: true, data: result[0] });
     }
 
     if (req.method === 'DELETE') {
@@ -61,7 +61,7 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'memberId is required' });
       }
 
-      await pool.query(sql`DELETE FROM members WHERE id = ${parseInt(memberId)}`);
+      await sql`DELETE FROM members WHERE id = ${parseInt(memberId)}`;
       return res.status(200).json({ success: true, data: { memberId: parseInt(memberId) } });
     }
 

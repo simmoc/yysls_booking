@@ -1,4 +1,4 @@
-import { pool, sql } from '../_lib/db.js';
+import { sql } from '../_lib/db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,10 +11,8 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const result = await pool.query(
-        sql`SELECT id, name, description, created_at FROM baiye ORDER BY id ASC`
-      );
-      return res.status(200).json({ success: true, data: result.rows });
+      const result = await sql`SELECT id, name, description, created_at FROM baiye ORDER BY id ASC`;
+      return res.status(200).json({ success: true, data: result });
     }
 
     if (req.method === 'POST') {
@@ -30,12 +28,12 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: 'name is required' });
       }
 
-      const result = await pool.query(
-        sql`INSERT INTO baiye (name, description) VALUES (${name}, ${description || null})
-            RETURNING id, name, description, created_at`
-      );
+      const result = await sql`
+        INSERT INTO baiye (name, description) VALUES (${name}, ${description || null})
+        RETURNING id, name, description, created_at
+      `;
 
-      return res.status(201).json({ success: true, data: result.rows[0] });
+      return res.status(201).json({ success: true, data: result[0] });
     }
 
     if (req.method === 'DELETE') {
@@ -46,7 +44,7 @@ export default async function handler(req, res) {
         return res.status(403).json({ success: false, error: 'Admin access required' });
       }
 
-      await pool.query(sql`DELETE FROM baiye WHERE id = ${parseInt(baiyeId)}`);
+      await sql`DELETE FROM baiye WHERE id = ${parseInt(baiyeId)}`;
       return res.status(200).json({ success: true });
     }
 

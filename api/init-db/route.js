@@ -1,4 +1,4 @@
-import { pool, sql } from '../_lib/db.js';
+import { sql } from '../_lib/db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -21,42 +21,42 @@ export default async function handler(req, res) {
     }
 
     // Create tables in correct order: users -> baiye -> time_slots -> members -> bookings
-    await pool.query(sql`
+    await sql`
       CREATE TABLE IF NOT EXISTS users (
         id SERIAL PRIMARY KEY,
         fingerprint VARCHAR(64) UNIQUE NOT NULL,
         role VARCHAR(20) DEFAULT 'user',
         created_at TIMESTAMP DEFAULT NOW()
       )
-    `);
+    `;
 
-    await pool.query(sql`
+    await sql`
       CREATE TABLE IF NOT EXISTS baiye (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         description TEXT,
         created_at TIMESTAMP DEFAULT NOW()
       )
-    `);
+    `;
 
-    await pool.query(sql`
+    await sql`
       CREATE TABLE IF NOT EXISTS time_slots (
         id SERIAL PRIMARY KEY,
         description VARCHAR(200) NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
       )
-    `);
+    `;
 
-    await pool.query(sql`
+    await sql`
       CREATE TABLE IF NOT EXISTS members (
         id SERIAL PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         baiye_id INTEGER REFERENCES baiye(id),
         created_at TIMESTAMP DEFAULT NOW()
       )
-    `);
+    `;
 
-    await pool.query(sql`
+    await sql`
       CREATE TABLE IF NOT EXISTS bookings (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id),
@@ -68,7 +68,7 @@ export default async function handler(req, res) {
         remark TEXT,
         created_at TIMESTAMP DEFAULT NOW()
       )
-    `);
+    `;
 
     return res.status(200).json({ success: true, data: { message: 'All tables created successfully' } });
   } catch (error) {

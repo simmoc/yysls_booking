@@ -1,4 +1,4 @@
-import { pool, sql } from '../_lib/db.js';
+import { sql } from '../_lib/db.js';
 
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -36,11 +36,11 @@ export default async function handler(req, res) {
 
       query = sql`${query} ORDER BY b.created_at DESC`;
 
-      const result = await pool.query(query);
+      const result = await query;
 
       // 计算统计信息（按百业和时间段分组）
       const stats = {};
-      result.rows.forEach(row => {
+      result.forEach(row => {
         const key = `${row.baiye_id}_${row.time_slot_id}`;
         if (!stats[key]) {
           stats[key] = {
@@ -58,7 +58,7 @@ export default async function handler(req, res) {
         else if (row.character_role === '输出') stats[key].dps++;
       });
 
-      return res.status(200).json({ success: true, data: result.rows, stats: Object.values(stats) });
+      return res.status(200).json({ success: true, data: result, stats: Object.values(stats) });
     }
 
     if (req.method === 'POST') {
@@ -69,12 +69,12 @@ export default async function handler(req, res) {
       }
 
       // 检查同一场预约的限制
-      const existingBookings = await pool.query(
-        sql`SELECT character_role FROM bookings WHERE baiye_id = ${parseInt(baiyeId)} AND time_slot_id = ${parseInt(timeSlotId)}`
-      );
+      const existingBookings = await sql`
+        SELECT character_role FROM bookings WHERE baiye_id = ${parseInt(baiyeId)} AND time_slot_id = ${parseInt(timeSlotId)}
+      `;
 
-      const totalCount = existingBookings.rows.length;
-      const healerCount = existingBookings.rows.filter(b => b.character_role === '奶妈').length;
+      const totalCount = existingBookings.length;
+      const healerCount = existingBookings.filter(b => b.character_role === '奶妈').length;
 
       // 限制1: 总人数不超过10人
       if (totalCount >= 10) {
@@ -91,14 +91,14 @@ export default async function handler(req, res) {
         return res.status(400).json({ success: false, error: '该时段仅剩1个名额，需预留给奶妈' });
       }
 
-      const result = await pool.query(
-        sql`INSERT INTO bookings (user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark)
-            VALUES (${parseInt(userId)}, ${characterName || null}, ${characterRole || null}, ${characterDps || null},
-                    ${parseInt(baiyeId)}, ${parseInt(timeSlotId)}, ${remark || null})
-            RETURNING id, user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark, created_at`
-      );
+      const result = await sql`
+        INSERT INTO bookings (user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark)
+        VALUES (${parseInt(userId)}, ${characterName || null}, ${characterRole || null}, ${characterDps || null},
+                ${parseInt(baiyeId)}, ${parseInt(timeSlotId)}, ${remark || null})
+        RETURNING id, user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark, created_at
+      `;
 
-      return res.status(201).json({ success: true, data: result.rows[0] });
+      return res.status(201).json({ success: true, data: result[0] });
     }
 
     if (req.method === 'DELETE') {
@@ -108,7 +108,7 @@ export default async function handler(req, res) {
 
       // Clear all bookings (admin only)
       if (!bookingId && userRole === 'admin') {
-        await pool.query(sql`DELETE FROM bookings`);
+        await sql`DELETE FROM bookings`;
         return res.status(200).json({ success: true, data: { message: 'All bookings cleared' } });
       }
 
@@ -117,24 +117,20 @@ export default async function handler(req, res) {
       }
 
       // Verify the booking belongs to the user
-      const existing = await pool.query(
-        sql`SELECT user_id FROM bookings WHERE id = ${parseInt(bookingId)}`
-      );
+      const existing = await sql`SELECT user_id FROM bookings WHERE id = ${parseInt(bookingId)}`;
 
-      if (existing.rows.length === 0) {
+      if (existing.length === 0) {
         return res.status(404).json({ success: false, error: 'Booking not found' });
       }
 
-      if (existing.rows[0].user_id !== parseInt(userId)) {
-        const userResult = await pool.query(
-          sql`SELECT role FROM users WHERE id = ${parseInt(userId)}`
-        );
-        if (userResult.rows.length === 0 || userResult.rows[0].role !== 'admin') {
+      if (existing[0].user_id !== parseInt(userId)) {
+        const userResult = await sql`SELECT role FROM users WHERE id = ${parseInt(userId)}`;
+        if (userResult.length === 0 || userResult[0].role !== 'admin') {
           return res.status(403).json({ success: false, error: 'Not authorized to delete this booking' });
         }
       }
 
-      await pool.query(sql`DELETE FROM bookings WHERE id = ${parseInt(bookingId)}`);
+      await sql`DELETE FROM bookings WHERE id = ${parseInt(bookingId)}`;
       return res.status(200).json({ success: true, data: { bookingId: parseInt(bookingId) } });
     }
 
