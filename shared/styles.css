@@ -181,6 +181,44 @@ body {
     opacity: 0.9;
 }
 
+.char-meta {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* 职业类型标签 */
+.role-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    white-space: nowrap;
+}
+
+.role-tag.role-输出 {
+    background: #fde8e8;
+    color: #c0392b;
+}
+
+.role-tag.role-承伤 {
+    background: #e8f0fd;
+    color: #2980b9;
+}
+
+.role-tag.role-奶妈 {
+    background: #e8fde8;
+    color: #27ae60;
+}
+
+.character-item.active .role-tag {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+}
+
 .character-item.active .char-dps {
     color: var(--accent-color);
 }
@@ -708,6 +746,45 @@ select.form-control {
 
 ::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.3);
+}
+
+/* 成员列表模态框 */
+.members-modal-list {
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.member-item-inline {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 16px;
+    margin-bottom: 8px;
+    background: var(--bg-color);
+    border-radius: var(--radius-sm);
+    transition: background 0.2s ease;
+}
+
+.member-item-inline:hover {
+    background: #e8f0f8;
+}
+
+.member-name-inline {
+    font-weight: 500;
+    color: var(--text-primary);
+}
+
+.member-baiye-inline {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+/* 加载中（内联） */
+.loading-inline {
+    text-align: center;
+    padding: 30px;
+    color: var(--text-secondary);
+    font-size: 0.95rem;
 }
 
 /* 响应式设计 */

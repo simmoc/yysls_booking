@@ -19,7 +19,7 @@ export default async function handler(req) {
       const baiyeId = url.searchParams.get('baiyeId');
       const timeSlotId = url.searchParams.get('timeSlotId');
 
-      let query = sql`SELECT b.id, b.user_id, b.character_name, b.character_dps,
+      let query = sql`SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_dps,
                       b.baiye_id, b.time_slot_id, b.remark, b.created_at,
                       by.name AS baiye_name, ts.description AS time_slot_description
                       FROM bookings b
@@ -50,7 +50,7 @@ export default async function handler(req) {
     }
 
     if (req.method === 'POST') {
-      const { characterName, characterDps, baiyeId, timeSlotId, remark, userId } = await req.json();
+      const { characterName, characterRole, characterDps, baiyeId, timeSlotId, remark, userId } = await req.json();
 
       if (!userId || !baiyeId || !timeSlotId) {
         return new Response(
@@ -60,10 +60,10 @@ export default async function handler(req) {
       }
 
       const result = await pool.query(
-        sql`INSERT INTO bookings (user_id, character_name, character_dps, baiye_id, time_slot_id, remark)
-            VALUES (${parseInt(userId)}, ${characterName || null}, ${characterDps || null},
+        sql`INSERT INTO bookings (user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark)
+            VALUES (${parseInt(userId)}, ${characterName || null}, ${characterRole || null}, ${characterDps || null},
                     ${parseInt(baiyeId)}, ${parseInt(timeSlotId)}, ${remark || null})
-            RETURNING id, user_id, character_name, character_dps, baiye_id, time_slot_id, remark, created_at`
+            RETURNING id, user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark, created_at`
       );
 
       return new Response(

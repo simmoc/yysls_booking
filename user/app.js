@@ -2,7 +2,7 @@
  * 燕云百业侠境预约系统 - 用户页面逻辑
  */
 
-import { registerFingerprint, getBaiyes, getTimeSlots, getBookings, createBooking, deleteBooking } from '../shared/api-client.js';
+import { registerFingerprint, getBaiyes, getTimeSlots, getBookings, getMembers, createBooking, deleteBooking } from '../shared/api-client.js';
 import { getVisitorId } from '../shared/fingerprint.js';
 import { escapeHtml, showToast, generateShareLink, copyToClipboard } from '../shared/utils.js';
 
@@ -124,7 +124,9 @@ function showCharacterModal(editId) {
     const title = document.getElementById('character-modal-title');
     const idInput = document.getElementById('character-id');
     const nameInput = document.getElementById('character-name');
+    const roleSelect = document.getElementById('character-role');
     const dpsInput = document.getElementById('character-dps');
+    const dpsGroup = document.getElementById('dps-group');
 
     if (editId) {
         // 编辑模式
@@ -134,17 +136,35 @@ function showCharacterModal(editId) {
         title.textContent = '编辑角色';
         idInput.value = char.id;
         nameInput.value = char.name;
+        roleSelect.value = char.role || '';
         dpsInput.value = char.dps || '';
     } else {
         // 创建模式
         title.textContent = '创建角色';
         idInput.value = '';
         nameInput.value = '';
+        roleSelect.value = '';
         dpsInput.value = '';
     }
 
+    // 根据职业类型控制秒伤字段显示
+    toggleDpsField(roleSelect.value);
+
     openModal('character-modal');
     nameInput.focus();
+}
+
+/**
+ * 根据职业类型切换秒伤字段显示
+ * @param {string} role - 职业类型
+ */
+function toggleDpsField(role) {
+    const dpsGroup = document.getElementById('dps-group');
+    if (role === '奶妈') {
+        dpsGroup.style.display = 'none';
+    } else {
+        dpsGroup.style.display = 'block';
+    }
 }
 
 /**
@@ -153,6 +173,7 @@ function showCharacterModal(editId) {
 function saveCharacter() {
     const idInput = document.getElementById('character-id');
     const nameInput = document.getElementById('character-name');
+    const roleSelect = document.getElementById('character-role');
     const dpsInput = document.getElementById('character-dps');
 
     const name = nameInput.value.trim();
@@ -162,7 +183,14 @@ function saveCharacter() {
         return;
     }
 
-    const dps = dpsInput.value.trim();
+    const role = roleSelect.value;
+    if (!role) {
+        showToast('请选择职业类型', 'error');
+        roleSelect.focus();
+        return;
+    }
+
+    const dps = role === '奶妈' ? '' : dpsInput.value.trim();
     const chars = getAllCharacters();
     const editId = idInput.value;
 
@@ -171,6 +199,7 @@ function saveCharacter() {
         const index = chars.findIndex(c => c.id === editId);
         if (index !== -1) {
             chars[index].name = name;
+            chars[index].role = role;
             chars[index].dps = dps;
             // 如果编辑的是当前角色，同步更新
             if (currentCharacter && currentCharacter.id === editId) {
@@ -183,6 +212,7 @@ function saveCharacter() {
         const newChar = {
             id: generateId(),
             name,
+            role,
             dps
         };
         chars.push(newChar);
@@ -356,13 +386,14 @@ async function submitBooking() {
 
     try {
         await createBooking({
-            userId: currentUser.id,
-            baiyeId: parseInt(baiyeId),
-            timeSlotId: parseInt(timeSlotId),
-            characterName: currentCharacter.name,
-            characterDps: currentCharacter.dps ? parseFloat(currentCharacter.dps) : null,
-            remark
-        });
+    userId: currentUser.id,
+    baiyeId: parseInt(baiyeId),
+    timeSlotId: parseInt(timeSlotId),
+    characterName: currentCharacter.name,
+    characterRole: currentCharacter.role || null,
+    characterDps: currentCharacter.dps ? parseFloat(currentCharacter.dps) : null,
+    remark
+});
 
         showToast('预约成功！');
 
@@ -540,12 +571,16 @@ function renderCharacterList() {
 
     container.innerHTML = chars.map(char => {
         const isActive = currentCharacter && currentCharacter.id === char.id;
+        const roleLabel = getRoleLabel(char.role);
         const dpsText = char.dps ? `${escapeHtml(char.dps)} 万秒伤` : '未填写秒伤';
         return `
             <div class="character-item ${isActive ? 'active' : ''}" data-id="${escapeHtml(char.id)}">
                 <div class="char-info" onclick="window._selectCharacter('${escapeHtml(char.id)}')">
                     <span class="char-name">${escapeHtml(char.name)}</span>
-                    <span class="char-dps">${escapeHtml(dpsText)}</span>
+                    <div class="char-meta">
+                        <span class="role-tag role-${escapeHtml(char.role || '')}">${escapeHtml(roleLabel)}</span>
+                        <span class="char-dps">${escapeHtml(dpsText)}</span>
+                    </div>
                 </div>
                 <div class="char-actions">
                     <button class="btn-icon" title="编辑" onclick="event.stopPropagation(); window._showCharacterModal('${escapeHtml(char.id)}')">&#9998;</button>
@@ -554,6 +589,20 @@ function renderCharacterList() {
             </div>
         `;
     }).join('');
+}
+
+/**
+ * 获取职业类型标签
+ * @param {string} role - 职业类型
+ * @returns {string} 显示标签
+ */
+function getRoleLabel(role) {
+    const labels = {
+        '输出': '🗡️ 输出',
+        '承伤': '🛡️ 承伤',
+        '奶妈': '💚 奶妈'
+    };
+    return labels[role] || role || '未设置';
 }
 
 /**
@@ -602,12 +651,16 @@ function renderBookingList(bookings) {
         const timeName = getTimeSlotName(booking.timeSlotId);
         const remark = booking.remark || '';
         const isOwner = currentUser && (booking.userId === currentUser.id || booking.fingerprint === currentUser.fingerprint);
+        const roleTag = booking.characterRole
+            ? `<span class="role-tag role-${escapeHtml(booking.characterRole)}">${escapeHtml(getRoleLabel(booking.characterRole))}</span>`
+            : '';
 
         return `
             <div class="booking-item">
                 <div class="booking-info">
                     <div class="booking-header">
                         <span class="booking-char">${escapeHtml(charName)}</span>
+                        ${roleTag}
                         ${dps ? `<span class="booking-dps">${escapeHtml(dps)} 万</span>` : ''}
                     </div>
                     <div class="booking-detail">
@@ -616,11 +669,10 @@ function renderBookingList(bookings) {
                     </div>
                     ${remark ? `<div class="booking-remark">&#128172; ${escapeHtml(remark)}</div>` : ''}
                 </div>
-                ${isOwner ? `
-                    <div class="booking-actions">
-                        <button class="btn btn-small btn-danger" onclick="window._removeBooking('${escapeHtml(id)}')">取消预约</button>
-                    </div>
-                ` : ''}
+                <div class="booking-actions">
+                    <button class="btn-icon btn-view-members" data-baiye-id="${escapeHtml(booking.baiyeId)}" title="查看成员">👥</button>
+                    ${isOwner ? `<button class="btn btn-small btn-danger" onclick="window._removeBooking('${escapeHtml(id)}')">取消预约</button>` : ''}
+                </div>
             </div>
         `;
     }).join('');
@@ -681,6 +733,44 @@ window._deleteCharacter = deleteCharacter;
 window._removeBooking = removeBooking;
 window.closeShareBanner = closeShareBanner;
 
+// ==================== 查看成员列表 ====================
+
+/**
+ * 查看指定百业的成员列表
+ * @param {number|string} baiyeId - 百业 ID
+ */
+async function viewMembers(baiyeId) {
+    const modal = document.getElementById('members-modal');
+    const title = document.getElementById('members-modal-title');
+    const content = document.getElementById('members-list-content');
+
+    // 查找百业名称
+    const baiye = baiyes.find(b => String(b.id) === String(baiyeId));
+    title.textContent = baiye ? `${baiye.name} - 成员列表` : '成员列表';
+
+    content.innerHTML = '<div class="loading-inline">加载中...</div>';
+    openModal('members-modal');
+
+    try {
+        const data = await getMembers(baiyeId);
+        const members = data.data || data.members || data || [];
+
+        if (members.length === 0) {
+            content.innerHTML = '<p class="empty-tip">该百业暂无成员</p>';
+            return;
+        }
+
+        content.innerHTML = members.map(m => `
+            <div class="member-item-inline">
+                <span class="member-name-inline">${escapeHtml(m.name)}</span>
+                ${m.baiye_name ? `<span class="member-baiye-inline">${escapeHtml(m.baiye_name)}</span>` : ''}
+            </div>
+        `).join('');
+    } catch (error) {
+        content.innerHTML = `<p class="empty-tip">加载失败: ${escapeHtml(error.message)}</p>`;
+    }
+}
+
 // ==================== 事件绑定 ====================
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -719,9 +809,28 @@ document.addEventListener('DOMContentLoaded', () => {
         closeModal('share-modal');
     });
 
+    // 关闭成员列表模态框
+    document.getElementById('btn-close-members-modal').addEventListener('click', () => {
+        closeModal('members-modal');
+    });
+
+    // 职业选择变化 - 控制秒伤字段显示
+    document.getElementById('character-role').addEventListener('change', (e) => {
+        toggleDpsField(e.target.value);
+    });
+
     // 筛选栏变化
     document.getElementById('filter-baiye').addEventListener('change', loadBookings);
     document.getElementById('filter-time').addEventListener('change', loadBookings);
+
+    // 预约列表事件委托（查看成员按钮）
+    document.getElementById('booking-list').addEventListener('click', (e) => {
+        const memberBtn = e.target.closest('.btn-view-members');
+        if (memberBtn) {
+            const baiyeId = memberBtn.dataset.baiyeId;
+            if (baiyeId) viewMembers(baiyeId);
+        }
+    });
 
     // 点击模态框背景关闭
     window.addEventListener('click', (e) => {

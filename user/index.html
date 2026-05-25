@@ -131,6 +131,15 @@
                     <input type="text" id="character-name" class="form-control" placeholder="输入角色名称">
                 </div>
                 <div class="form-group">
+                    <label>职业类型 <span class="required">*</span></label>
+                    <select id="character-role" class="form-control">
+                        <option value="">请选择职业</option>
+                        <option value="输出">输出</option>
+                        <option value="承伤">承伤</option>
+                        <option value="奶妈">奶妈</option>
+                    </select>
+                </div>
+                <div class="form-group" id="dps-group">
                     <label>木桩秒伤（万）</label>
                     <input type="number" id="character-dps" class="form-control" placeholder="输入秒伤数值">
                 </div>
@@ -156,6 +165,21 @@
                     <button class="btn btn-primary" id="btn-copy-share-link">复制</button>
                 </div>
                 <p class="tip">成员打开链接后可直接参与预约</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- 成员列表模态框 -->
+    <div id="members-modal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="members-modal-title">百业成员</h3>
+                <button class="close-btn" id="btn-close-members-modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div id="members-list-content" class="members-modal-list">
+                    <p class="empty-tip">暂无成员</p>
+                </div>
             </div>
         </div>
     </div>

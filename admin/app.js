@@ -429,11 +429,16 @@ function renderBookingList(bookings) {
         const slot = timeSlots.find(t => t.id === item.timeSlotId);
         const timeDesc = slot ? slot.description : '未知时段';
 
+        // 职业类型标签
+        const role = item.characterRole || item.character_role;
+        const roleTag = role ? `<span class="role-tag role-${escapeHtml(role)}">${escapeHtml(getRoleLabel(role))}</span>` : '';
+
         return `
             <div class="admin-item" style="flex-direction: column; align-items: flex-start; gap: 8px;">
                 <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
-                    <div class="item-info">
+                    <div class="item-info" style="flex-direction: row; align-items: center; gap: 8px;">
                         <span class="item-name">${escapeHtml(item.characterName || item.memberName || '未知角色')}</span>
+                        ${roleTag}
                         ${item.dps ? `<span class="item-desc">秒伤: ${escapeHtml(String(item.dps))}万</span>` : ''}
                     </div>
                     <span class="item-desc" style="font-size: 0.8rem;">#${item.id}</span>
@@ -586,6 +591,14 @@ function checkAdmin() {
         return false;
     }
     return true;
+}
+
+/**
+ * 获取职业类型标签
+ */
+function getRoleLabel(role) {
+    const labels = { '输出': '🗡️ 输出', '承伤': '🛡️ 承伤', '奶妈': '💚 奶妈' };
+    return labels[role] || role || '未设置';
 }
 
 /**
