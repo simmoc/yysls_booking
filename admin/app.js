@@ -374,7 +374,7 @@ async function loadBookings() {
 }
 
 /**
- * 处理清空所有预约
+ * 处理清空预约记录
  */
 async function handleClearBookings() {
     if (!checkAdmin()) return;
@@ -389,6 +389,77 @@ async function handleClearBookings() {
     } catch (error) {
         showToast('清空失败: ' + error.message, 'error');
     }
+}
+
+/**
+ * 获取选中的预约 ID 列表
+ */
+function getSelectedBookingIds() {
+    const checkboxes = document.querySelectorAll('.booking-checkbox:checked');
+    return Array.from(checkboxes).map(cb => parseInt(cb.dataset.bookingId));
+}
+
+/**
+ * 更新批量操作按钮可见性
+ */
+function updateBatchActionsVisibility() {
+    const selectedIds = getSelectedBookingIds();
+    const batchActions = document.querySelector('.booking-batch-actions');
+    const countSpan = document.getElementById('booking-selected-count');
+
+    if (selectedIds.length > 0) {
+        batchActions.style.display = 'flex';
+        batchActions.style.gap = '8px';
+        countSpan.textContent = `已选 ${selectedIds.length} 项`;
+    } else {
+        batchActions.style.display = 'none';
+    }
+}
+
+/**
+ * 全选/取消全选预约
+ */
+function handleSelectAllBookings() {
+    const checkboxes = document.querySelectorAll('.booking-checkbox');
+    const allChecked = Array.from(checkboxes).every(cb => cb.checked);
+    checkboxes.forEach(cb => cb.checked = !allChecked);
+    updateBatchActionsVisibility();
+}
+
+/**
+ * 批量删除选中的预约
+ */
+async function handleBatchDeleteBookings() {
+    if (!checkAdmin()) return;
+
+    const selectedIds = getSelectedBookingIds();
+    if (selectedIds.length === 0) {
+        showToast('请先选择要删除的预约', 'error');
+        return;
+    }
+
+    const confirmed = await showConfirm(`确定要删除选中的 ${selectedIds.length} 项预约吗？此操作不可撤销！`);
+    if (!confirmed) return;
+
+    let successCount = 0;
+    let failCount = 0;
+
+    for (const id of selectedIds) {
+        try {
+            await deleteBooking(id, currentUser.id);
+            successCount++;
+        } catch (error) {
+            failCount++;
+        }
+    }
+
+    if (failCount === 0) {
+        showToast(`已删除 ${successCount} 项预约`);
+    } else {
+        showToast(`成功 ${successCount} 项，失败 ${failCount} 项`, failCount > 0 ? 'error' : 'success');
+    }
+
+    await loadBookings();
 }
 
 /**
@@ -459,8 +530,9 @@ function renderBookingList(bookings) {
             const roleTag = charRole ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>` : '';
             
             html += `
-                <div class="admin-item" style="padding: 8px 12px; margin-bottom: 4px; background: var(--bg-color); border-radius: 4px;">
-                    <div style="display: flex; justify-content: space-between; align-items: center;">
+                <div class="admin-item admin-booking-item" style="padding: 8px 12px; margin-bottom: 4px; background: var(--bg-color); border-radius: 4px; display: flex; align-items: center; gap: 8px;">
+                    <input type="checkbox" class="booking-checkbox" data-booking-id="${item.id}" style="width: 18px; height: 18px; cursor: pointer;">
+                    <div style="flex: 1; display: flex; justify-content: space-between; align-items: center;">
                         <div class="item-info" style="flex-direction: row; align-items: center; gap: 8px;">
                             <span class="item-name">${escapeHtml(charName)}</span>
                             ${roleTag}
@@ -468,7 +540,7 @@ function renderBookingList(bookings) {
                         </div>
                         <span class="item-desc" style="font-size: 0.75rem;">#${item.id}</span>
                     </div>
-                    ${remark ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px;">📝 ${escapeHtml(remark)}</div>` : ''}
+                    ${remark ? `<div style="font-size: 0.85rem; color: var(--text-secondary); margin-top: 4px; padding-left: 26px;">📝 ${escapeHtml(remark)}</div>` : ''}
                 </div>
             `;
         });
@@ -884,6 +956,17 @@ function bindEvents() {
 
     // 预约清空
     document.getElementById('btn-clear-bookings').addEventListener('click', handleClearBookings);
+
+    // 预约批量操作
+    document.getElementById('btn-batch-delete-bookings').addEventListener('click', handleBatchDeleteBookings);
+    document.getElementById('btn-select-all').addEventListener('click', handleSelectAllBookings);
+
+    // 预约列表复选框变化监听（事件委托）
+    document.getElementById('admin-booking-list').addEventListener('change', (e) => {
+        if (e.target.classList.contains('booking-checkbox')) {
+            updateBatchActionsVisibility();
+        }
+    });
 
     // 数据库初始化
     document.getElementById('btn-init-db').addEventListener('click', handleInitDb);
