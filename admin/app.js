@@ -17,10 +17,10 @@ import {
     deleteMember as apiDeleteMember,
     clearBookings,
     initDatabase
-} from '../shared/api-client.js';
+} from '/shared/api-client.js';
 
-import { getVisitorId } from '../shared/fingerprint.js';
-import { escapeHtml, showToast, showLoading, openModal, closeModal } from '../shared/utils.js';
+import { getVisitorId } from '/shared/fingerprint.js';
+import { escapeHtml, showToast, showLoading, openModal, closeModal } from '/shared/utils.js';
 
 // ==================== 全局状态 ====================
 

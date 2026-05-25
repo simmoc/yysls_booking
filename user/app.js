@@ -2,9 +2,9 @@
  * 燕云百业侠境预约系统 - 用户页面逻辑
  */
 
-import { registerFingerprint, getBaiyes, getTimeSlots, getBookings, getMembers, createBooking, deleteBooking } from '../shared/api-client.js';
-import { getVisitorId } from '../shared/fingerprint.js';
-import { escapeHtml, showToast, generateShareLink, copyToClipboard } from '../shared/utils.js';
+import { registerFingerprint, getBaiyes, getTimeSlots, getBookings, getMembers, createBooking, deleteBooking } from '/shared/api-client.js';
+import { getVisitorId } from '/shared/fingerprint.js';
+import { escapeHtml, showToast, generateShareLink, copyToClipboard } from '/shared/utils.js';
 
 // ==================== 全局状态 ====================
 
