@@ -723,12 +723,17 @@ function updateBookingFormStats() {
         // 显示满员警告
         const fullWarning = document.getElementById('booking-full-warning');
         const healerWarning = document.getElementById('healer-full-warning');
+        const reservedWarning = document.getElementById('healer-reserved-warning');
 
         fullWarning.style.display = stat.total >= 10 ? 'block' : 'none';
 
         // 检查当前角色是否是奶妈
         const isHealer = currentCharacter && currentCharacter.role === '奶妈';
         healerWarning.style.display = (isHealer && stat.healers >= 3) ? 'block' : 'none';
+
+        // 预留位置提示：当人数>=9且没有奶妈时，非奶妈角色看到提示
+        const needsHealerReserved = stat.total >= 9 && stat.healers === 0;
+        reservedWarning.style.display = (needsHealerReserved && !isHealer) ? 'block' : 'none';
     } else {
         // 无预约数据
         document.getElementById('stat-current').textContent = '0';
@@ -737,6 +742,7 @@ function updateBookingFormStats() {
         document.getElementById('stat-dps').textContent = '0';
         document.getElementById('booking-full-warning').style.display = 'none';
         document.getElementById('healer-full-warning').style.display = 'none';
+        document.getElementById('healer-reserved-warning').style.display = 'none';
     }
 
     statsContainer.style.display = 'block';

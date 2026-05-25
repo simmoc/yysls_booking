@@ -104,6 +104,15 @@ export default async function handler(req) {
         );
       }
 
+      // 限制3: 预留1个位置给奶妈
+      // 当总人数达到9人且没有奶妈时，非奶妈角色无法预约
+      if (totalCount >= 9 && healerCount === 0 && characterRole !== '奶妈') {
+        return new Response(
+          JSON.stringify({ success: false, error: '该时段仅剩1个名额，需预留給奶妈' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
       const result = await pool.query(
         sql`INSERT INTO bookings (user_id, character_name, character_role, character_dps, baiye_id, time_slot_id, remark)
             VALUES (${parseInt(userId)}, ${characterName || null}, ${characterRole || null}, ${characterDps || null},
