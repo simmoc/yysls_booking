@@ -345,9 +345,12 @@ async function loadBookings() {
 
         const data = await getBookings(params);
         allBookings = Array.isArray(data) ? data : (data.data || data.bookings || []);
+        // 保存统计信息（用于预约表单显示）
+        window.bookingStats = data.stats || [];
 
         renderBookingList(allBookings);
         updateStats(allBookings);
+        updateBookingFormStats();
     } catch (error) {
         console.error('加载预约列表失败:', error);
         showToast('加载预约列表失败', 'error');
@@ -692,6 +695,53 @@ function updateStats(bookings) {
     document.getElementById('stat-baiye-count').textContent = baiyes.length;
 }
 
+/**
+ * 更新预约表单中的人数统计显示
+ */
+function updateBookingFormStats() {
+    const baiyeId = document.getElementById('baiye-select').value;
+    const timeSlotId = document.getElementById('time-select').value;
+    const statsContainer = document.getElementById('booking-stats');
+
+    // 如果未选择百业或时间，隐藏统计
+    if (!baiyeId || !timeSlotId) {
+        statsContainer.style.display = 'none';
+        return;
+    }
+
+    // 查找对应统计
+    const stats = window.bookingStats || [];
+    const key = `${baiyeId}_${timeSlotId}`;
+    const stat = stats.find(s => String(s.baiyeId) === String(baiyeId) && String(s.timeSlotId) === String(timeSlotId));
+
+    if (stat) {
+        document.getElementById('stat-current').textContent = stat.total;
+        document.getElementById('stat-healers').textContent = stat.healers;
+        document.getElementById('stat-tanks').textContent = stat.tanks;
+        document.getElementById('stat-dps').textContent = stat.dps;
+
+        // 显示满员警告
+        const fullWarning = document.getElementById('booking-full-warning');
+        const healerWarning = document.getElementById('healer-full-warning');
+
+        fullWarning.style.display = stat.total >= 10 ? 'block' : 'none';
+
+        // 检查当前角色是否是奶妈
+        const isHealer = currentCharacter && currentCharacter.role === '奶妈';
+        healerWarning.style.display = (isHealer && stat.healers >= 3) ? 'block' : 'none';
+    } else {
+        // 无预约数据
+        document.getElementById('stat-current').textContent = '0';
+        document.getElementById('stat-healers').textContent = '0';
+        document.getElementById('stat-tanks').textContent = '0';
+        document.getElementById('stat-dps').textContent = '0';
+        document.getElementById('booking-full-warning').style.display = 'none';
+        document.getElementById('healer-full-warning').style.display = 'none';
+    }
+
+    statsContainer.style.display = 'block';
+}
+
 // ==================== 模态框控制 ====================
 
 /**
@@ -818,6 +868,10 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('character-role').addEventListener('change', (e) => {
         toggleDpsField(e.target.value);
     });
+
+    // 百业和时间选择变化 - 更新人数统计
+    document.getElementById('baiye-select').addEventListener('change', updateBookingFormStats);
+    document.getElementById('time-select').addEventListener('change', updateBookingFormStats);
 
     // 筛选栏变化
     document.getElementById('filter-baiye').addEventListener('change', loadBookings);

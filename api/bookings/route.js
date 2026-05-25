@@ -43,8 +43,29 @@ export default async function handler(req) {
       query = sql`${query} ORDER BY b.created_at DESC`;
 
       const result = await pool.query(query);
+
+      // 计算统计信息（按百业和时间段分组）
+      const stats = {};
+      result.rows.forEach(row => {
+        const key = `${row.baiye_id}_${row.time_slot_id}`;
+        if (!stats[key]) {
+          stats[key] = {
+            baiyeId: row.baiye_id,
+            timeSlotId: row.time_slot_id,
+            total: 0,
+            healers: 0,
+            tanks: 0,
+            dps: 0
+          };
+        }
+        stats[key].total++;
+        if (row.character_role === '奶妈') stats[key].healers++;
+        else if (row.character_role === '承伤') stats[key].tanks++;
+        else if (row.character_role === '输出') stats[key].dps++;
+      });
+
       return new Response(
-        JSON.stringify({ success: true, data: result.rows }),
+        JSON.stringify({ success: true, data: result.rows, stats: Object.values(stats) }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
@@ -55,6 +76,30 @@ export default async function handler(req) {
       if (!userId || !baiyeId || !timeSlotId) {
         return new Response(
           JSON.stringify({ success: false, error: 'userId, baiyeId, and timeSlotId are required' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // 检查同一场预约的限制
+      const existingBookings = await pool.query(
+        sql`SELECT character_role FROM bookings WHERE baiye_id = ${parseInt(baiyeId)} AND time_slot_id = ${parseInt(timeSlotId)}`
+      );
+
+      const totalCount = existingBookings.rows.length;
+      const healerCount = existingBookings.rows.filter(b => b.character_role === '奶妈').length;
+
+      // 限制1: 总人数不超过10人
+      if (totalCount >= 10) {
+        return new Response(
+          JSON.stringify({ success: false, error: '该时段预约已满（最多10人）' }),
+          { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      }
+
+      // 限制2: 奶妈最多3人
+      if (characterRole === '奶妈' && healerCount >= 3) {
+        return new Response(
+          JSON.stringify({ success: false, error: '该时段奶妈名额已满（最多3人）' }),
           { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
         );
       }

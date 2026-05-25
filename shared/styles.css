@@ -787,6 +787,50 @@ select.form-control {
     font-size: 0.95rem;
 }
 
+/* 预约人数统计 */
+.booking-stats {
+    background: var(--bg-color);
+    border-radius: var(--radius-sm);
+    padding: 16px;
+    margin-bottom: 20px;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--border-color);
+}
+
+.stat-row:last-child {
+    border-bottom: none;
+}
+
+.stat-row .stat-label {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+}
+
+.stat-row .stat-value {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.stat-row .stat-value span {
+    color: var(--primary-color);
+}
+
+.booking-warning {
+    margin-top: 12px;
+    padding: 10px 14px;
+    background: #fff3cd;
+    border-left: 4px solid var(--accent-color);
+    border-radius: 4px;
+    color: #856404;
+    font-size: 0.9rem;
+}
+
 /* 响应式设计 */
 @media (max-width: 900px) {
     .user-layout {

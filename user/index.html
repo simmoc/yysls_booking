@@ -90,6 +90,31 @@
                             <option value="">请选择时间</option>
                         </select>
                     </div>
+                    <!-- 人数统计显示 -->
+                    <div id="booking-stats" class="booking-stats" style="display: none;">
+                        <div class="stat-row">
+                            <span class="stat-label">当前人数</span>
+                            <span class="stat-value"><span id="stat-current">0</span>/10</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">奶妈</span>
+                            <span class="stat-value"><span id="stat-healers">0</span>/3</span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">承伤</span>
+                            <span class="stat-value"><span id="stat-tanks">0</span></span>
+                        </div>
+                        <div class="stat-row">
+                            <span class="stat-label">输出</span>
+                            <span class="stat-value"><span id="stat-dps">0</span></span>
+                        </div>
+                        <div id="booking-full-warning" class="booking-warning" style="display: none;">
+                            ⚠️ 该时段预约已满
+                        </div>
+                        <div id="healer-full-warning" class="booking-warning" style="display: none;">
+                            ⚠️ 奶妈名额已满
+                        </div>
+                    </div>
                     <div class="form-group">
                         <label>备注</label>
                         <input type="text" id="remark-input" class="form-control" placeholder="可选：添加备注信息">
