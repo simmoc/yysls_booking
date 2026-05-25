@@ -637,7 +637,30 @@ function updateBookingFormVisibility() {
 }
 
 /**
- * 渲染预约列表
+ * 解析时间段描述获取开始和结束时间（分钟）
+ * @param {string} desc - 时间段描述，如 "20:00-22:00 (周一至周五)"
+ * @returns {object} {start: 开始分钟, end: 结束分钟}
+ */
+function parseTimeRange(desc) {
+    if (!desc) return { start: 0, end: 1440 };
+
+    // 匹配时间格式 HH:MM-HH:MM
+    const match = desc.match(/(\d{1,2}):(\d{2})\s*-\s*(\d{1,2}):(\d{2})/);
+    if (!match) return { start: 0, end: 1440 };
+
+    const startHour = parseInt(match[1]);
+    const startMin = parseInt(match[2]);
+    const endHour = parseInt(match[3]);
+    const endMin = parseInt(match[4]);
+
+    return {
+        start: startHour * 60 + startMin,
+        end: endHour * 60 + endMin
+    };
+}
+
+/**
+ * 渲染预约列表 - 按时间段+百业分组展示
  * @param {Array} bookings - 预约数组
  */
 function renderBookingList(bookings) {
@@ -648,43 +671,97 @@ function renderBookingList(bookings) {
         return;
     }
 
-    container.innerHTML = bookings.map(booking => {
-        const id = booking.id || booking._id;
-        // 兼容蛇形和驼峰命名
-        const charName = booking.character_name || booking.characterName || booking.name || '未知角色';
-        const charRole = booking.character_role || booking.characterRole || '';
-        const charDps = booking.character_dps || booking.characterDps || booking.dps || '';
-        const baiyeId = booking.baiye_id || booking.baiyeId;
-        const timeSlotId = booking.time_slot_id || booking.timeSlotId;
-        const baiyeName = booking.baiye_name || getBaiyeName(baiyeId);
-        const timeName = booking.time_slot_description || getTimeSlotName(timeSlotId);
-        const remark = booking.remark || '';
-        const isOwner = currentUser && (booking.user_id === currentUser.id || booking.userId === currentUser.id);
-        const roleTag = charRole
-            ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>`
-            : '';
+    // 按时间段+百业分组
+    const grouped = {};
+    bookings.forEach(item => {
+        const timeSlotId = item.time_slot_id || item.timeSlotId;
+        const timeDesc = item.time_slot_description || getTimeSlotName(timeSlotId);
+        const baiyeId = item.baiye_id || item.baiyeId;
+        const baiyeName = item.baiye_name || getBaiyeName(baiyeId);
 
-        return `
-            <div class="booking-item">
-                <div class="booking-info">
-                    <div class="booking-header">
-                        <span class="booking-char">${escapeHtml(charName)}</span>
-                        ${roleTag}
-                        ${charDps ? `<span class="booking-dps">⚔️ ${escapeHtml(charDps)}万</span>` : ''}
+        const groupKey = `${timeDesc}_${baiyeName}`;
+        if (!grouped[groupKey]) {
+            grouped[groupKey] = {
+                timeDesc,
+                baiyeName,
+                timeSlotId,
+                baiyeId,
+                timeRange: parseTimeRange(timeDesc),
+                bookings: []
+            };
+        }
+        grouped[groupKey].bookings.push(item);
+    });
+
+    // 按时间排序
+    const sortedGroups = Object.values(grouped).sort((a, b) => a.timeRange.start - b.timeRange.start);
+
+    // 生成 HTML
+    let html = '';
+    sortedGroups.forEach(group => {
+        const { timeDesc, baiyeName, timeSlotId, baiyeId, bookings: groupBookings } = group;
+
+        // 统计
+        const healerCount = groupBookings.filter(b => (b.character_role || b.characterRole) === '奶妈').length;
+        const tankCount = groupBookings.filter(b => (b.character_role || b.characterRole) === '承伤').length;
+        const dpsCount = groupBookings.filter(b => (b.character_role || b.characterRole) === '输出').length;
+
+        html += `
+            <div class="booking-group" style="margin-bottom: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); overflow: hidden;">
+                <div class="booking-group-header" style="background: linear-gradient(135deg, var(--primary-color), #4a6fa5); color: #fff; padding: 12px 16px; display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 1.05rem;">${escapeHtml(timeDesc)}</div>
+                        <div style="font-size: 0.85rem; opacity: 0.9; margin-top: 2px;">🏢 ${escapeHtml(baiyeName)}</div>
                     </div>
-                    <div class="booking-detail">
-                        <span class="booking-baiye">🏢 ${escapeHtml(baiyeName)}</span>
-                        <span class="booking-time">⏰ ${escapeHtml(timeName)}</span>
+                    <div style="text-align: right; font-size: 0.8rem;">
+                        <div>💚${healerCount} 🛡️${tankCount} 🗡️${dpsCount}</div>
+                        <div>共 ${groupBookings.length} 人</div>
                     </div>
-                    ${remark ? `<div class="booking-remark">📝 ${escapeHtml(remark)}</div>` : ''}
                 </div>
-                <div class="booking-actions">
-                    <button class="btn-icon btn-view-members" data-baiye-id="${escapeHtml(baiyeId)}" data-time-slot-id="${escapeHtml(timeSlotId)}" title="查看详情">👥</button>
-                    ${isOwner ? `<button class="btn btn-small btn-danger" onclick="window._removeBooking('${escapeHtml(id)}')">取消预约</button>` : ''}
+                <div class="booking-group-body" style="padding: 8px;">
+        `;
+
+        groupBookings.forEach(booking => {
+            const id = booking.id || booking._id;
+            const charName = booking.character_name || booking.characterName || booking.name || '未知角色';
+            const charRole = booking.character_role || booking.characterRole || '';
+            const charDps = booking.character_dps || booking.characterDps || booking.dps || '';
+            const remark = booking.remark || '';
+            const isOwner = currentUser && (booking.user_id === currentUser.id || booking.userId === currentUser.id);
+            const roleTag = charRole
+                ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>`
+                : '';
+
+            html += `
+                <div class="booking-item" style="padding: 10px 12px; margin-bottom: 6px; background: var(--bg-color); border-radius: 6px;">
+                    <div class="booking-info">
+                        <div class="booking-header">
+                            <span class="booking-char">${escapeHtml(charName)}</span>
+                            ${roleTag}
+                            ${charDps ? `<span class="booking-dps">⚔️ ${escapeHtml(charDps)}万</span>` : ''}
+                        </div>
+                        ${remark ? `<div class="booking-remark" style="margin-top: 4px;">📝 ${escapeHtml(remark)}</div>` : ''}
+                    </div>
+                    <div class="booking-actions">
+                        ${isOwner ? `<button class="btn btn-small btn-danger" onclick="window._removeBooking('${escapeHtml(id)}')">取消预约</button>` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        // 查看详情按钮放在组底部
+        html += `
+                </div>
+                <div style="padding: 8px 12px; background: rgba(74, 111, 165, 0.05); border-top: 1px solid var(--border-color);">
+                    <button class="btn btn-small btn-view-members" data-baiye-id="${escapeHtml(baiyeId)}" data-time-slot-id="${escapeHtml(timeSlotId)}" style="width: 100%;">
+                        👥 查看该场次详情 (${groupBookings.length}人)
+                    </button>
                 </div>
             </div>
         `;
-    }).join('');
+    });
+
+    container.innerHTML = html;
 }
 
 /**
