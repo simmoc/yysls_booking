@@ -343,17 +343,25 @@ async function loadBookings() {
         const filterBaiyeId = document.getElementById('filter-baiye').value;
         const filterTimeId = document.getElementById('filter-time').value;
 
+        // 加载当前用户的预约（用于列表展示）
         const params = {};
+        if (currentUser && currentUser.id) params.userId = currentUser.id;
         if (filterBaiyeId) params.baiyeId = filterBaiyeId;
         if (filterTimeId) params.timeSlotId = filterTimeId;
 
         const data = await getBookings(params);
         allBookings = Array.isArray(data) ? data : (data.data || data.bookings || []);
-        // 保存统计信息（用于预约表单显示）
-        window.bookingStats = data.stats || [];
 
         renderBookingList(allBookings);
         updateStats(allBookings);
+
+        // 单独加载全部预约统计（用于预约表单人数显示）
+        const statsParams = {};
+        if (filterBaiyeId) statsParams.baiyeId = filterBaiyeId;
+        if (filterTimeId) statsParams.timeSlotId = filterTimeId;
+        const statsData = await getBookings(statsParams);
+        window.bookingStats = statsData.stats || [];
+
         updateBookingFormStats();
     } catch (error) {
         console.error('加载预约列表失败:', error);

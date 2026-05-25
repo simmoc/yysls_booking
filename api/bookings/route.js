@@ -13,53 +13,39 @@ export default async function handler(req, res) {
     if (req.method === 'GET') {
       const baiyeId = req.query.baiyeId;
       const timeSlotId = req.query.timeSlotId;
+      const userId = req.query.userId;
 
-      let result;
+      // 动态构建 WHERE 条件
+      const conditions = [];
+      const params = [];
+      let paramIndex = 1;
 
-      if (baiyeId && timeSlotId) {
-        result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
-                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
-                 by.name AS baiye_name, ts.description AS time_slot_description
-          FROM bookings b
-          JOIN baiye by ON b.baiye_id = by.id
-          JOIN time_slots ts ON b.time_slot_id = ts.id
-          WHERE b.baiye_id = ${parseInt(baiyeId)} AND b.time_slot_id = ${parseInt(timeSlotId)}
-          ORDER BY b.created_at DESC
-        `;
-      } else if (baiyeId) {
-        result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
-                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
-                 by.name AS baiye_name, ts.description AS time_slot_description
-          FROM bookings b
-          JOIN baiye by ON b.baiye_id = by.id
-          JOIN time_slots ts ON b.time_slot_id = ts.id
-          WHERE b.baiye_id = ${parseInt(baiyeId)}
-          ORDER BY b.created_at DESC
-        `;
-      } else if (timeSlotId) {
-        result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
-                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
-                 by.name AS baiye_name, ts.description AS time_slot_description
-          FROM bookings b
-          JOIN baiye by ON b.baiye_id = by.id
-          JOIN time_slots ts ON b.time_slot_id = ts.id
-          WHERE b.time_slot_id = ${parseInt(timeSlotId)}
-          ORDER BY b.created_at DESC
-        `;
-      } else {
-        result = await sql`
-          SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
-                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
-                 by.name AS baiye_name, ts.description AS time_slot_description
-          FROM bookings b
-          JOIN baiye by ON b.baiye_id = by.id
-          JOIN time_slots ts ON b.time_slot_id = ts.id
-          ORDER BY b.created_at DESC
-        `;
+      if (userId) {
+        conditions.push(`b.user_id = $${paramIndex++}`);
+        params.push(parseInt(userId));
       }
+      if (baiyeId) {
+        conditions.push(`b.baiye_id = $${paramIndex++}`);
+        params.push(parseInt(baiyeId));
+      }
+      if (timeSlotId) {
+        conditions.push(`b.time_slot_id = $${paramIndex++}`);
+        params.push(parseInt(timeSlotId));
+      }
+
+      const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+      const result = await sql(
+        `SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
+                b.baiye_id, b.time_slot_id, b.remark, b.created_at,
+                by.name AS baiye_name, ts.description AS time_slot_description
+         FROM bookings b
+         JOIN baiye by ON b.baiye_id = by.id
+         JOIN time_slots ts ON b.time_slot_id = ts.id
+         ${whereClause}
+         ORDER BY b.created_at DESC`,
+        params
+      );
 
       // 计算统计信息（按百业和时间段分组）
       const stats = {};
