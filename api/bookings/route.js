@@ -35,7 +35,7 @@ export default async function handler(req, res) {
 
       const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
 
-      const result = await sql(
+      const result = await sql.query(
         `SELECT b.id, b.user_id, b.character_name, b.character_role, b.character_school, b.character_dps,
                 b.baiye_id, b.time_slot_id, b.remark, b.created_at,
                 by.name AS baiye_name, ts.description AS time_slot_description
