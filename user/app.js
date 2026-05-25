@@ -930,14 +930,17 @@ async function viewBookingDetail(baiyeId, timeSlotId) {
         html += bookings.map(b => {
             const name = b.character_name || b.characterName || '未知角色';
             const role = b.character_role || b.characterRole || '';
+            const school = b.character_school || b.characterSchool || '';
             const dps = b.character_dps || b.characterDps || '';
             const remark = b.remark || '';
             const roleTag = role ? `<span class="role-tag role-${escapeHtml(role)}">${escapeHtml(getRoleLabel(role))}</span>` : '';
+            const schoolTag = school ? `<span class="school-tag">${escapeHtml(school)}</span>` : '';
             return `
                 <div class="member-item-inline">
                     <div class="member-detail-left">
                         <span class="member-name-inline">${escapeHtml(name)}</span>
                         ${roleTag}
+                        ${schoolTag}
                     </div>
                     <div class="member-detail-right">
                         ${dps ? `<span class="member-dps-inline">⚔️ ${escapeHtml(dps)}万</span>` : ''}

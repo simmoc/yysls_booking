@@ -525,10 +525,12 @@ function renderBookingList(bookings) {
         groupBookings.forEach(item => {
             const charName = item.character_name || item.characterName || '未知角色';
             const charRole = item.character_role || item.characterRole || '';
+            const charSchool = item.character_school || item.characterSchool || '';
             const charDps = item.character_dps || item.characterDps || item.dps || '';
             const remark = item.remark || '';
             const roleTag = charRole ? `<span class="role-tag role-${escapeHtml(charRole)}">${escapeHtml(getRoleLabel(charRole))}</span>` : '';
-            
+            const schoolTag = charSchool ? `<span class="school-tag">${escapeHtml(charSchool)}</span>` : '';
+
             html += `
                 <div class="admin-item admin-booking-item" style="padding: 8px 12px; margin-bottom: 4px; background: var(--bg-color); border-radius: 4px; display: flex; align-items: center; gap: 8px;">
                     <input type="checkbox" class="booking-checkbox" data-booking-id="${item.id}" style="width: 18px; height: 18px; cursor: pointer;">
@@ -536,6 +538,7 @@ function renderBookingList(bookings) {
                         <div class="item-info" style="flex-direction: row; align-items: center; gap: 8px;">
                             <span class="item-name">${escapeHtml(charName)}</span>
                             ${roleTag}
+                            ${schoolTag}
                             ${charDps ? `<span class="item-desc">⚔️ ${escapeHtml(String(charDps))}万</span>` : ''}
                         </div>
                         <span class="item-desc" style="font-size: 0.75rem;">#${item.id}</span>
@@ -838,15 +841,16 @@ function renderGanttChart(bookings) {
 function showActivityDetail(bookingId) {
     const booking = allBookings.find(b => b.id === bookingId);
     if (!booking) return;
-    
+
     const charName = booking.character_name || booking.characterName || '未知角色';
     const charRole = booking.character_role || booking.characterRole || '';
+    const charSchool = booking.character_school || booking.characterSchool || '';
     const charDps = booking.character_dps || booking.characterDps || booking.dps || '';
     const baiyeName = booking.baiye_name || getBaiyeName(booking.baiye_id || booking.baiyeId);
     const timeDesc = booking.time_slot_description || getTimeSlotName(booking.time_slot_id || booking.timeSlotId);
     const remark = booking.remark || '';
     const createdAt = booking.created_at || booking.createdAt || '';
-    
+
     const content = document.getElementById('activity-detail-content');
     content.innerHTML = `
         <div class="activity-detail-item">
@@ -857,6 +861,12 @@ function showActivityDetail(bookingId) {
             <span class="activity-detail-label">职业类型</span>
             <span class="activity-detail-value">${escapeHtml(getRoleLabel(charRole))}</span>
         </div>
+        ${charSchool ? `
+        <div class="activity-detail-item">
+            <span class="activity-detail-label">流派</span>
+            <span class="activity-detail-value">${escapeHtml(charSchool)}</span>
+        </div>
+        ` : ''}
         ${charDps ? `
         <div class="activity-detail-item">
             <span class="activity-detail-label">秒伤</span>
@@ -884,7 +894,7 @@ function showActivityDetail(bookingId) {
         </div>
         ` : ''}
     `;
-    
+
     openModal('activity-detail-modal');
 }
 
