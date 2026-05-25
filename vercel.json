@@ -1,5 +1,11 @@
 {
   "rewrites": [
+    { "source": "/api/fingerprint", "destination": "/api/fingerprint/route.js" },
+    { "source": "/api/baiye", "destination": "/api/baiye/route.js" },
+    { "source": "/api/time-slots", "destination": "/api/time-slots/route.js" },
+    { "source": "/api/members", "destination": "/api/members/route.js" },
+    { "source": "/api/bookings", "destination": "/api/bookings/route.js" },
+    { "source": "/api/init-db", "destination": "/api/init-db/route.js" },
     { "source": "/user", "destination": "/user/index.html" },
     { "source": "/admin", "destination": "/admin/index.html" },
     { "source": "/", "destination": "/user/index.html" }
