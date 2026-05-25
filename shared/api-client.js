@@ -162,15 +162,14 @@ export async function deleteMember(memberId, userId, userRole) {
 
 /**
  * 获取所有预约列表
- * @param {number} [baiyeId] - 可选，按百业 ID 筛选
- * @param {number} [timeSlotId] - 可选，按时间段 ID 筛选
+ * @param {object} [filters] - 可选筛选条件 { baiyeId, timeSlotId }
  * @returns {Promise<Array>} 预约列表
  */
-export async function getBookings(baiyeId, timeSlotId) {
+export async function getBookings(filters = {}) {
     let endpoint = '/bookings';
     const params = [];
-    if (baiyeId) params.push(`baiyeId=${baiyeId}`);
-    if (timeSlotId) params.push(`timeSlotId=${timeSlotId}`);
+    if (filters.baiyeId) params.push(`baiyeId=${encodeURIComponent(filters.baiyeId)}`);
+    if (filters.timeSlotId) params.push(`timeSlotId=${encodeURIComponent(filters.timeSlotId)}`);
     if (params.length > 0) endpoint += '?' + params.join('&');
     return request(endpoint);
 }
@@ -190,11 +189,11 @@ export async function createBooking(data) {
 /**
  * 删除预约
  * @param {number} bookingId - 预约 ID
- * @param {string} fingerprint - 用户指纹
+ * @param {string} userId - 用户 ID
  * @returns {Promise<object>} 删除结果
  */
-export async function deleteBooking(bookingId, fingerprint) {
-    return request(`/bookings?bookingId=${bookingId}&fingerprint=${encodeURIComponent(fingerprint)}`, {
+export async function deleteBooking(bookingId, userId) {
+    return request(`/bookings?bookingId=${bookingId}&userId=${encodeURIComponent(userId)}`, {
         method: 'DELETE'
     });
 }

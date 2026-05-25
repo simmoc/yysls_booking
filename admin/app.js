@@ -378,10 +378,10 @@ async function loadBookings() {
     try {
         const filterBaiyeId = document.getElementById('booking-filter-baiye')?.value;
         const filterTimeId = document.getElementById('booking-filter-time')?.value;
-        const data = await getBookings(
-            filterBaiyeId || undefined,
-            filterTimeId || undefined
-        );
+        const filters = {};
+        if (filterBaiyeId) filters.baiyeId = filterBaiyeId;
+        if (filterTimeId) filters.timeSlotId = filterTimeId;
+        const data = await getBookings(filters);
         const bookings = data.data || data.bookings || data || [];
         renderBookingList(bookings);
     } catch (error) {
